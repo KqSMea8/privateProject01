@@ -1,8 +1,5 @@
 Manifest-Version: 1.0
 Built-By: tk t440s3
 Build-Jdk: 10.0.1
-Implementation-Title: manager
-Implementation-Version: 0.0.1-SNAPSHOT
-Implementation-Vendor-Id: manager
 Created-By: Maven Integration for Eclipse
 
