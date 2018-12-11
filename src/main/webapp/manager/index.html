@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+		<title>赛事开盘后台管理系统</title>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+		<#include "/include/import.html"/>
+</head>
+<body>
+	<div class="navbar navbar-default" id="navbar">
+		<div class="navbar-container" id="navbar-container">
+			<div class="navbar-header pull-left">
+				<a href="#" class="navbar-brand">
+					<small>
+						<i class="icon-leaf"></i>
+						赛事开盘后台管理系统
+					</small>
+				</a>
+			</div>
+			<!-- 头部 -->
+			<div class="navbar-header pull-right" role="navigation">
+
+				<ul class="nav ace-nav">
+					<li class="light-blue">
+						<a data-toggle="dropdown" href="#" class="dropdown-toggle">
+							<img class="nav-user-photo" src="assets/avatars/user.jpg" alt="Jason's Photo" />
+							<span class="user-info" style="max-width: 500px;">
+								<small>您好：</small>
+								<span class="col-sm-10">${operator.operatorName }</span>
+							</span>
+							<i class="icon-caret-down"></i>
+						</a>
+
+						<ul class="user-menu pull-right dropdown-menu dropdown-yellow dropdown-caret dropdown-close">
+							<#if operator.operatorAccount != 'admin'>
+							<li id="updatePwdContent">
+								<a href="#">
+									<i class="icon-cog"></i>
+									修改密码
+								</a>
+							</li>
+							<li class="divider"></li>
+							</#if>
+							<li>
+								<a href="#" onclick="lognout()">
+									<i class="icon-off"></i>
+									退出
+								</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<!-- /.ace-nav -->
+			</div>
+			<!--头部 -->
+		</div>
+	</div>
+
+	<!-- 主页面 -->
+	<div class="main-container" id="main-container">
+		<!-- 主页面 -->
+		<div class="main-container-inner">
+			<div class="sidebar" id="sidebar">
+				<!-- 菜单栏 -->
+				<ul class="nav nav-list" id="allMenu">
+					<li class="active">
+						<a href="toindex">
+							<i class="icon-desktop"></i>
+							<span class="menu-text">首页</span>
+						</a>
+					</li>
+					<!-- 第一级菜单 -->
+					<#list menus as menuOne>
+						<li id="menu_li_${menuOne.menu_id }">
+						<a href="javaScript:openMenu('${menuOne.menu_url}','${menuOne.menu_id }','${menuOne.menu_name }','${menuOne.menu_id }')" ${(menuOne.isHaveSubMenu)?string('class="dropdown-toggle"','')}>
+								<i class="${(menuOne.menu_css)!'' }"></i>
+								<span class="menu-text">${menuOne.menu_name} </span>
+								<#if menuOne.isHaveSubMenu>
+									<b class="arrow icon-angle-down"></b>
+								</#if>
+							</a>
+							<#if menuOne.isHaveSubMenu>
+								<ul class="submenu">
+									<!-- 第二级菜单 -->
+									<#list menuOne.subMenu as menuTwo>
+										<li id="menu_li_${menuTwo.menu_id }">
+											<a href="javaScript:openMenu('${menuTwo.menu_url}','${menuTwo.menu_id }','${menuTwo.menu_name }','${menuOne.menu_id}' )" class="${menuTwo.isHaveSubMenu?string('dropdown-toggle','')}">
+												<i class="icon-double-angle-right"></i>
+												<span class="menu-text">${menuTwo.menu_name}</span>
+												<#if menuTwo.isHaveSubMenu>
+													<b class="arrow icon-angle-down"></b>
+												</#if>
+											</a>
+											<#if menuTwo.isHaveSubMenu >
+												<ul class="submenu">
+													<!-- 第三级菜单 -->
+													<#list menuTwo.subMenu as menuThird>
+														<li id="menu_li_${menuThird.menu_id }">
+															<a href="javaScript:openMenu('${menuThird.menu_url}','${menuThird.menu_id }','${menuThird.menu_name }','${menuOne.menu_id}' )"
+																class="${menuThird.isHaveSubMenu?string('dropdown-toggle','')}">
+																<i class="${(menuThird.menu_css)!'' }"></i>
+																<span class="menu-text">${menuThird.menu_name}</span>
+																<#if menuThird.isHaveSubMenu>
+																	<b class="arrow icon-angle-down"></b>
+																</#if>
+															</a>
+															<#if menuThird.isHaveSubMenu >
+																<ul class="submenu">
+																	<!-- 第四级菜单 -->
+																	<#list menuThird.subMenu as menuFour>
+																		<li id="menu_li_${menuFour.menu_id }">
+																			<a href="javaScript:openMenu('${menuFour.menu_url}','${menuFour.menu_id }','${menuFour.menu_name }','${menuOne.menu_id}' )">
+																				<i class="${(menuFour.menu_css)!'' }"></i>
+																				<span class="menu-text">${menuThird.menu_name} </span>
+																			</a>
+																		</li>
+																	</#list>
+																</ul>
+															</#if>
+														</li>
+													</#list>
+												</ul>
+											</#if>
+										</li>
+									</#list>
+								</ul>
+							</#if>		
+						</li>
+					</#list>
+				</ul>
+				<!-- 菜单栏 -->
+				<!-- 置顶按钮 -->
+				<div class="sidebar-collapse" id="sidebar-collapse">
+					<i class="icon-double-angle-left" data-icon1="icon-double-angle-left" data-icon2="icon-double-angle-right"></i>
+				</div>
+				<!-- /置顶按钮 -->
+			</div>
+			<!-- 工作区域 -->
+			<div class="main-content">
+				<div class="col-sm-12">
+					<div class="tabbable" style="margin: 0px -11px;">
+						<!-- class中的padding-12 tab-color-blue background-blue可以去掉，去掉之后是另外一种风格 -->
+						<ul class="nav nav-tabs padding-12 tab-color-blue background-blue" id="myTab"font-size: 12px;>
+							<li class="active" id="tab_home">
+								<a data-toggle="tab" href="#home">
+									<i class="green icon-home bigger-110"></i>
+									首页
+								</a>
+							</li>
+							<li class="dropdown" style="display:none;">
+								<a data-toggle="dropdown" class="dropdown-toggle" href="#">
+									更多 &nbsp;
+									<i class="icon-caret-down bigger-110 width-auto"></i>
+								</a>
+								<ul class="dropdown-menu dropdown-info" id="myTab_more_ul">
+								</ul>
+							</li>
+						</ul>
+						<div class="tab-content" id="myTabContent" style="padding:10px;background:white;">
+							<div id="home" class="tab-pane in active" style="height:100%;">
+								<#if operator.operatorAccount == 'admin'> 
+										<div>
+											<h1 style="margin-left: 10px;margin-bottom: 20px;">【系统参数设置】</h1>
+										</div>
+										<div style="margin-left: 100px;">
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 1、会员单日注册数量: </span>
+												<input type="text" id="erverdayMemberTotal" name="erverdayMemberTotal" value="${(systemParams.erverdayMemberTotal)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('erverdayMemberTotal')">确定</button>&nbsp;&nbsp;(人)
+											</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 2、会员单日充值限额: </span>
+												<input type="text" id="erverdayUserRecharge" name="erverdayUserRecharge" value="${(systemParams.erverdayUserRecharge)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('erverdayUserRecharge')">确定</button>
+											</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 3、会员单日提现限额: </span>
+												<input type="text" id="erverdayUserWithdrawals" name="erverdayUserWithdrawals" value="${(systemParams.erverdayUserWithdrawals)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('erverdayUserWithdrawals')">确定</button>
+											</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 4、团队奖励冻结天数: </span>
+												<input type="text" id="teamMoneyCloseDays" name="teamMoneyCloseDays" value="${(systemParams.teamMoneyCloseDays)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('teamMoneyCloseDays')">确定</button>
+											</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 5、直推佣金收益比例: </span>
+												<input type="text" id="commissionRecommend" name="commissionRecommend" value="${(systemParams.commissionRecommend)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('commissionRecommend')">确定</button>&nbsp;&nbsp;(按照1点数收益多少填写)
+											</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 6、是否启用僵尸用户自动判断程序: </span>
+												<input name="switch-field-1" id="intelligenceFlag" ${(systemParams.isOpenJudgeCorpse=='1')?string('checked','')} onclick="setJudgeCorpseStatus(this);" class="ace ace-switch ace-switch-5" type="checkbox" />
+												<span class="lbl" style="margin-top:-10px;"></span>
+											</div>
+											
+											<div>=========================================================================================================</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 7、团队计算总级数: </span>
+												<input type="text" id="totalLevelGroupEarnings" name="totalLevelGroupEarnings" value="${(systemParams.totalLevelGroupEarnings)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('totalLevelGroupEarnings')">确定</button>
+											</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 8、开始减幅级数: </span>
+												<input type="text" id="halfGroupEaringsStartLevel" name="halfGroupEaringsStartLevel" value="${(systemParams.halfGroupEaringsStartLevel)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('halfGroupEaringsStartLevel')">确定</button>
+											</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 9、团队收益比例减幅比例: </span>
+												<input type="text" id="halfGroupEaringsProportion" name="halfGroupEaringsProportion" value="${(systemParams.halfGroupEaringsProportion)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('halfGroupEaringsProportion')">确定</button>
+												&nbsp;&nbsp;(按照原提成比例的多少填写;例：原提成比例的一半则填写0.5)
+											</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 10、新增代理帐号扣点数: </span>
+												<input type="text" id="openMemberDeduction" name="openMemberDeduction" value="${(systemParams.openMemberDeduction)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('openMemberDeduction')">确定</button>
+											</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 11、新增代理帐号扣点返还自然日: </span>
+												<input type="text" id="openMemberDeductionBackDay" name="openMemberDeductionBackDay" value="${(systemParams.openMemberDeductionBackDay)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('openMemberDeductionBackDay')">确定</button>
+												&nbsp;&nbsp;(天)
+											</div>
+											<div style = "height:40px;line-height:40px;margin-bottom: 20px;">
+												<span style = "font-size: 20px;"> 12、提现手续费: </span>
+												<input type="text" id="serviceCharge" name="serviceCharge" value="${(systemParams.serviceCharge)!''}">
+												<button class="btn btn-app btn-primary btn-minier" style="padding: 2px 0 2px ;margin-left: 10px;" onclick="updateParams('serviceCharge')">确定</button>
+												&nbsp;&nbsp;(按照提现1点手续手续费用填写;例：提现1点收取百分之5，则填写0.05)
+											</div>
+										</div>
+								<#else>
+									<div style= "width: 100%;height: 100%;">
+										<h1 style="margin-left: 100px;margin-top: 50px;">【${operator.operatorAccount}】您好！欢迎使用赛事开盘管理系统！</h1>
+									</div>
+								</#if>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- 工作区域 -->
+		</div>
+		<!-- 主页面 -->
+		<div class="footer">
+			<div class="footer-inner">
+				<div class="footer-content" style="position:absolute;bottom:0px;right:40%;line-height:35px;height:35px;">
+					<!-- <span class="bigger-120">
+						<span class="blue bolder">世界杯</span>
+						 &copy; 2018
+					</span> -->
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- 主页面 -->
+	<!-- 修改密码弹出框 -->
+	<div id="condition" class="hide">
+		<div class="row">
+			<div class="col-xs-12">
+				<form class="form-horizontal" id="updatePwdForm" role="form">
+					<div class="space-4"></div>
+
+					<div class="form-group">
+						<label class="col-sm-3 control-label no-padding-right" for="sellerText">原密码：</label>
+
+						<div class="col-sm-9">
+							<div class="clearfix">
+								<input type="password" id="oldPwd" name="oldPwd" style="width:50%;" placeholder="原密码">
+							</div>
+						</div>
+					</div>
+
+					<div class="space-4"></div>
+
+					<div class="form-group">
+						<label class="col-sm-3 control-label no-padding-right" for="province">新密码：</label>
+
+						<div class="col-sm-9">
+							<div class="clearfix">
+								<input type="password" id="newPwd" name="newPwd" style="width:50%;" placeholder="新密码">
+							</div>
+						</div>
+					</div>
+
+					<div class="space-4"></div>
+
+					<div class="form-group">
+						<label class="col-sm-3 control-label no-padding-right" for="datePeriod">新密码确认：</label>
+
+						<div class="col-sm-9">
+							<div class="clearfix">
+								<input type="password" id="newPwdConfirm" name="newPwdConfirm" style="width: 50%;" placeholder="新密码确认">
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</body>
+<script src="manager/index.js"></script>
+</html>

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.investment.proxy.InvestmentProxy">
+	
+	<sql id="getInvestmentListBaseSql">
+		AND a.del_flag = 1
+		<if test="status != null">
+			AND a.status = #{status}
+		</if>
+	</sql>
+
+	<select id="getInvestmentList" resultType="map">
+		SELECT
+			a.investment_product_id,
+			a.name,
+			a.min_day,
+			a.start_money,
+			CONCAT(TRUNCATE (a.earnings*100,2),'%') earnings,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') create_time,
+			a.status,
+			a.content,
+			IFNULL(b.operator_name,'admin') operator_name
+		FROM
+			investment_product a LEFT JOIN system_operator b ON a.create_operator = b.operator_id
+		<where>
+			<include refid="getInvestmentListBaseSql"/>
+		</where>
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT 
+			#{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	
+	<select id="getInvestmentListCount" resultType="java.lang.Long">
+		SELECT
+			count(a.investment_product_id)
+		FROM
+			investment_product a
+		<where>
+			<include refid="getInvestmentListBaseSql"/>
+		</where>
+	</select>
+	
+	<update id="updateStatus">
+		UPDATE 
+			investment_product
+		SET 
+			status = ABS(status - 1)
+		WHERE
+			FIND_IN_SET(investment_product_id, #{investmentIds})
+	</update>
+	
+	<update id="delete">
+		UPDATE 
+			investment_product
+		SET 
+			del_flag = 0
+		WHERE
+			FIND_IN_SET(investment_product_id, #{investmentIds})
+	</update>
+
+	<insert id="addInfo">
+		INSERT INTO 
+			investment_product (name, content, status, min_day, start_money,earnings, create_operator)
+		VALUES
+			(#{name},#{content},#{status},#{minDay},#{startMoney},#{earnings}, #{operator.operatorId})
+	</insert>
+	
+	<update id="updateInfo">
+		UPDATE 
+			investment_product
+		SET 
+			name = #{name},
+			content = #{content},
+			status = #{status},
+			min_day = #{minDay},
+			start_money = #{startMoney},
+			earnings = #{earnings}
+		WHERE
+			investment_product_id = #{investmentId}
+	</update>
+	
+	<select id="isHaveDeal" resultType="java.lang.Integer">
+		SELECT
+			count(investment_deal_id)
+		FROM
+			investment_deal
+		WHERE
+			FIND_IN_SET(investment_product_id, #{investmentIds})
+	</select>
+	
+	<!-- ===============================================================定时任务 start================================================================= -->
+	<insert id="calculationEarningsSettlement">
+		INSERT INTO 
+			investment_earnings (user_id,investment_product_id,money,settlement_time)
+		SELECT
+			b.user_id,
+			b.investment_product_id,
+			IF((
+				(sum(CASE b.status WHEN 1 THEN b.money WHEN 2 THEN b.money *-1 END))
+				+
+				(
+					SELECT
+						SUM(c.money)
+					FROM
+						investment_earnings c
+					WHERE
+						c.investment_product_id = b.investment_product_id
+					AND c.user_id = b.user_id
+					AND DATE_FORMAT(c.create_time, '%Y-%m-%d') &gt;= (
+						SELECT
+							IFNULL(max(settlement_time),'2018-01-01 00:00:00')
+						FROM
+							investment_earnings
+						WHERE
+							user_id = c.user_id
+						AND investment_product_id = c.investment_product_id
+					)
+				)) &lt;= 0,0,1) earning,
+			(SELECT max(create_time) FROM investment_deal WHERE investment_product_id = b.investment_product_id AND user_id = b.user_id) isZoreTime
+		FROM
+			investment_product a,
+			investment_deal b
+		WHERE
+			a.investment_product_id = b.investment_product_id
+		AND a.status = 1
+		AND a.del_flag = 1
+		AND b.create_time &gt; (
+			SELECT
+				IFNULL(max(c.settlement_time),'2018-01-01 00:00:00')
+			FROM
+				investment_earnings c
+			WHERE
+				c.investment_product_id = b.investment_product_id
+			AND user_id = b.user_id
+		)
+		<!-- AND DATE_FORMAT(b.earnings_start_time,'%Y-%m-%d') &lt;= DATE_FORMAT(now(), '%Y-%m-%d') -->
+		GROUP BY 
+			a.investment_product_id,
+			b.user_id
+		HAVING earning &lt;= 0
+	</insert>
+	
+	<insert id="calculationEarningsByEarnings">
+		INSERT INTO 
+			investment_earnings (user_id,investment_product_id,money)
+		SELECT
+			c.investment_product_id,c.user_id,SUM(c.money)*d.earnings
+		FROM
+			investment_earnings c,investment_product d
+		WHERE
+		c.investment_product_id = d.investment_product_id
+		AND	c.create_time &gt; (
+			SELECT 
+				IFNULL(max(settlement_time),'2018-01-01 00:00:00')
+			FROM 
+				investment_earnings 
+			WHERE 
+				user_id = c.user_id 
+			AND investment_product_id = c.investment_product_id
+		)
+		GROUP BY
+			c.investment_product_id,c.user_id
+	</insert>
+	
+	<insert id="calculationEarningsByPrincipal">
+		INSERT INTO 
+			investment_earnings (user_id,investment_product_id,money)
+		SELECT
+			b.user_id,
+			b.investment_product_id,
+			(sum(CASE b.status WHEN 1 THEN b.money WHEN 2 THEN b.money *-1 END)) * a.earnings earning
+		FROM
+			investment_product a,
+			investment_deal b
+		WHERE
+			a.investment_product_id = b.investment_product_id
+		AND a.status = 1
+		AND a.del_flag = 1
+		AND b.create_time &gt; (
+			SELECT
+				IFNULL(max(c.settlement_time),'2018-01-01 00:00:00')
+			FROM
+				investment_earnings c
+			WHERE
+				c.investment_product_id = b.investment_product_id
+			AND user_id = b.user_id
+		)
+		AND DATE_FORMAT(b.earnings_start_time,'%Y-%m-%d') &lt;= DATE_FORMAT(now(), '%Y-%m-%d')
+		GROUP BY
+			a.investment_product_id,
+			b.user_id
+		HAVING
+			earning &gt; 0
+	</insert>
+	<!-- ===============================================================定时任务 end================================================================= -->
+</mapper>

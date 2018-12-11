@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.memberuser.proxy.MemberUserProxy">
+	<!-- ===============================================================会员管理相关 start========================================================== -->
+	<sql id="memberUserListWhereBaseSql">
+			a.del_flag = 1
+		<if test='status == null or status != 3 '>
+			AND a.status != 3
+		</if>
+		<if test='status != null'>
+			AND a.status = #{status}
+		</if>
+		<if test='userName != null and userName != ""'>
+			AND a.user_name like CONCAT('%',#{userName},'%')
+		</if>
+		<if test='userAccount != null and userAccount != ""'>
+			AND a.account like CONCAT('%',#{userAccount},'%')
+		</if>
+		<if test='userTel != null and userTel != ""'>
+			AND a.user_tel like CONCAT('%',#{userTel},'%')
+		</if>
+	</sql>
+	<select id="getMemberUserList" resultType="map">
+		SELECT
+			a.user_id,
+			a.user_name,
+			a.account,
+			a.user_tel,
+			a.balance, 
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') create_time,
+			(SELECT vip_name FROM vip_param WHERE vip_level = a.now_level) now_level,
+			a.bank_name,
+			a.bank_number,
+			DATE_FORMAT(a.last_login_time,'%Y-%m-%d %T') last_login_time,
+			a.status,
+			ABS(a.is_change_level - 1) is_change_level,
+			IFNULL((SELECT sum(money) FROM deal_log WHERE user_id = a.user_id AND type = 1 AND status = 1),0) total_recharge ,
+			IFNULL((SELECT sum(money) FROM competition_deal_note WHERE user_id = a.user_id AND is_back = 0),0) total_deal
+		FROM
+			user a
+		WHERE 
+			<include refid="memberUserListWhereBaseSql"/>
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT 
+			#{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	
+	<select id="getMemberUserListCount" resultType="java.lang.Long">
+		SELECT
+			COUNT(a.user_id)
+		FROM
+			user a
+		WHERE 
+			<include refid="memberUserListWhereBaseSql"/>
+	</select>
+	
+	<update id="edit">
+		UPDATE
+			user
+		SET
+			user_name = #{userName},
+			user_tel = #{userTel},
+			bank_number = #{userBankNumber},
+			bank_name = #{userBankName}
+		WHERE
+			user_id = #{userId}
+	</update>
+	
+	<update id="updateStatus">
+		UPDATE
+			user
+		SET
+			status = #{status}
+		WHERE
+			user_id = #{userId}
+	</update>
+	
+	<update id="setVipLevel">
+		UPDATE 
+			USER
+		SET 
+			now_level = #{level}
+			<if test='totalGroupUser != null '>
+				,
+				agency_number = #{totalGroupUser}
+			</if>
+			<if test="status != null">
+				,
+			 	is_change_level = 0
+			</if>
+		WHERE
+			user_id = #{userId}
+	</update>
+	<!-- ===============================================================会员管理相关 end========================================================== -->
+	<!-- ===============================================================会员充值/提现相关 start================================================================= -->
+	
+	<sql id="getUserDealLogBaseSql">
+			a.user_id = b.user_id
+			AND b.del_flag = 1
+			AND a.type = #{type}
+		<if test='status != null'>
+			AND a.status = #{status}
+		</if>
+		<if test='userName != null and userName != ""'>
+			AND b.user_name like CONCAT('%',#{userName},'%')
+		</if>
+		<if test='userAccount != null and userAccount != ""'>
+			AND b.account like CONCAT('%',#{userAccount},'%')
+		</if>
+		<if test='auditOperatorName != null and auditOperatorName != ""'>
+			AND c.operator_name like CONCAT('%',#{auditOperatorName},'%')
+		</if>
+	</sql>
+	
+	<select id="getUserDealLogList" resultType="map">
+		SELECT
+			a.deal_id,
+			b.user_name,
+			b.account,
+			a.money,
+			a.pay_type,
+			b.bank_name,
+			b.bank_number,
+			a.status,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') create_time,
+			DATE_FORMAT(a.audit_time,'%Y-%m-%d %T') audit_time,
+			IFNULL(c.operator_name, 'admin') operator_name,
+			a.recharge_money_account,
+			a.remark,
+			CASE a.status WHEN 2 THEN '' ELSE (a.money * (SELECT param_value FROM system_param WHERE param_category = 'serviceCharge')) END serviceCharge,
+			a.converstion
+		FROM
+			deal_log a LEFT JOIN system_operator c ON a.audit_operator = c.operator_id,
+		 	user b
+		WHERE
+			<include refid="getUserDealLogBaseSql"/>
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT 
+			#{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	
+	<select id="getUserDealLogListCount" resultType="java.lang.Long">
+		SELECT
+			count(a.deal_id)
+		FROM
+			deal_log a LEFT JOIN system_operator c ON a.audit_operator = c.operator_id,
+		 	user b
+		WHERE
+			<include refid="getUserDealLogBaseSql"/>
+	</select>
+	
+	<update id="auditDealLog">
+		UPDATE
+			deal_log
+		SET 
+			status = #{status},
+			audit_time = now(),
+			audit_operator = #{operetor.operatorId}
+			<if test='remark != null and remark != ""'>
+			,remark = #{remark}
+			</if>
+		WHERE 
+			FIND_IN_SET(deal_id,#{dealLogIds})
+	</update>
+	
+	<select id="getTotalNoCanWithdrawals" resultType="java.lang.Integer">
+		SELECT
+			IFNULL(SUM(b.totalMoney > a.balance),0)
+		FROM
+			USER a,
+			(
+				SELECT
+					SUM(money) totalMoney,
+					user_id
+				FROM
+					deal_log
+				WHERE
+					FIND_IN_SET(deal_id, #{dealLogIds})
+				AND type = 2
+				GROUP BY
+					user_id
+			) b
+		WHERE
+			a.user_id = b.user_id
+			AND a.del_flag = 1
+	</select>
+	
+	<update id="auditUserBalance">
+		UPDATE USER a,
+		 (
+			SELECT
+				SUM(money) totalMoney,
+				user_id
+			FROM
+				deal_log
+			WHERE
+				FIND_IN_SET(deal_id, #{dealLogIds})
+			AND type = #{type}
+			GROUP BY
+				user_id
+		) b
+		SET
+			a.status = 1,
+			a.balance = a.balance + b.totalMoney
+		WHERE
+			a.user_id = b.user_id
+	</update>
+	<!-- ===============================================================会员充值/提现相关 end================================================================= -->
+	<!-- ===============================================================定时任务 start================================================================= -->
+	
+	<select id="getOpenJudgeCorpseFlag" resultType="java.lang.Integer">
+		SELECT
+			param_value
+		FROM
+			system_param
+		WHERE
+			param_category = 'isOpenJudgeCorpse'
+	</select>
+	
+	<update id="frozenUserByCondition">
+		UPDATE 
+			user
+		SET 
+			status = 3
+		WHERE 
+			status != 0
+		AND
+			status != 0
+		AND balance &lt;=0
+		AND ! EXISTS (SELECT * FROM competition_deal_note WHERE user_id = user.user_id AND TIMESTAMPDIFF(DAY,create_time,now()))
+		AND ! EXISTS (SELECT * FROM investment_deal WHERE user_id = user.user_id AND status = 1 AND TIMESTAMPDIFF(DAY,create_time,now()))
+	</update>
+	
+	<update id="deleteUserByCondition">
+		UPDATE 
+			user
+		SET 
+			del_flag = 0
+		WHERE 
+			status != 0
+		AND
+			status != 0
+		AND balance &lt;=0
+		AND ! EXISTS (SELECT * FROM competition_deal_note WHERE user_id = user.user_id AND TIMESTAMPDIFF(DAY,create_time,now()))
+		AND ! EXISTS (SELECT * FROM investment_deal WHERE user_id = user.user_id AND status = 1 AND TIMESTAMPDIFF(DAY,create_time,now()))
+	</update>
+	
+	<select id="getUserIdList" resultType="java.lang.Integer">
+		SELECT
+			user_id
+		FROM
+			user
+		WHERE
+			is_change_level = 1
+		AND status = 1
+		AND del_flag = 1
+		ORDER BY
+			create_time DESC
+	</select>
+	
+	<select id="getVipParams" resultType="com.project.manager.vipparam.entity.VipParams">
+		SELECT
+			vip_level vipLevel,
+			vip_name vipName,
+			vip_recommend_total directTotal,
+			vip_teamuser_total groupTotal,
+			need_level needLevel,
+			need_level_total needLevelTotal
+		FROM
+			vip_param
+		ORDER BY
+			vip_level
+	</select>
+	
+	<select id="getDirectUserInfo" resultType="map">
+		SELECT
+			IFNULL(GROUP_CONCAT(user_id),'') userIds,
+			count(user_id) totalUser
+		FROM
+			user
+		WHERE
+			is_change_level = 1
+		AND status = 1
+		AND del_flag = 1
+		AND FIND_IN_SET(parent_id, #{userIds})
+	</select>
+	
+	<select id="needLevelTotal" resultType="java.lang.Integer">
+		SELECT
+			count(user_id) > #{needLevelTotal}
+		FROM
+			user
+		WHERE
+			is_change_level = 1
+		AND STATUS = 1
+		AND del_flag = 1
+		AND now_level = #{vipLevel}
+		AND FIND_IN_SET(user_id, #{userIds})
+	</select>
+	<!-- ===============================================================定时任务 end================================================================= -->
+	
+	<update id="backOpenDeduction">
+		UPDATE 
+			user a,
+		 	user_open_deduction b,
+			(
+				SELECT
+					sum(deduction_money) totalMoney,
+					user_id,
+					GROUP_CONCAT(user_open_deduction_id) deductionIds
+				FROM
+					user_open_deduction
+				WHERE
+					is_back = 0
+				AND DATE_ADD(
+					DATE_FORMAT(create_time, '%Y-%m-%d'),
+					INTERVAL (
+						SELECT
+							param_value
+						FROM
+							system_param
+						WHERE
+							param_category = 'openMemberDeductionBackDay'
+					) DAY
+				) &lt;= DATE_FORMAT(now(), '%Y-%m-%d')
+				GROUP BY
+					user_id
+			) c
+		SET 
+			a.balance = a.balance + c.totalMoney,
+		 	b.is_back = 1,
+		 	b.back_time = now()
+		WHERE
+			a.user_id = c.user_id
+		AND FIND_IN_SET(b.user_open_deduction_id,c.deductionIds)
+	</update>
+</mapper>

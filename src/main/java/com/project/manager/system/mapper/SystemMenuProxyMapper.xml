@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="SystemMenuMapper">
+	<resultMap id="BaseResultMap" type="com.project.manager.system.entity.SystemMenu">
+		<id column="menu_id" property="menuId" jdbcType="VARCHAR" />
+		<result column="menu_name" property="menuName" jdbcType="VARCHAR" />
+		<result column="parent_id" property="parentId" jdbcType="VARCHAR" />
+		<result column="menu_url" property="menuUrl" jdbcType="VARCHAR" />
+		<result column="menu_css" property="menuCss" jdbcType="VARCHAR" />
+		<result column="is_button" property="isButton" jdbcType="DECIMAL" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="status" property="status" jdbcType="DECIMAL" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		menu_id, menu_name, parent_id, menu_url,menu_css,is_button, sort, status
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+		select
+			<include refid="Base_Column_List" />
+		from 
+			system_menu
+		where 
+			menu_id = #{menuId,jdbcType=INTEGER}
+	</select>
+	
+	<!-- 通过角色ID获得所有一级菜单权限-->
+	<select id="selectByRoleId" resultType="map" parameterType="java.lang.Integer">
+		SELECT
+			t.*, CASE
+		WHEN t2.role_id IS NULL THEN
+			0
+		ELSE
+			1
+		END checked
+		FROM
+			system_menu t
+		LEFT JOIN system_role_menu t2 ON t.menu_id = t2.menu_id
+		AND t2.role_id = #{roleId,jdbcType=INTEGER}
+		WHERE
+			parent_id = 0
+		AND STATUS = 1
+		ORDER BY
+			t.sort
+	</select>
+	
+	<!-- 通过角色ID获得所有二级菜单权限 -->
+	<select id="selectByRoleId2" resultType="map" parameterType="java.lang.Integer">
+		SELECT
+			t.*, CASE
+		WHEN t2.role_id IS NULL THEN
+			0
+		ELSE
+			1
+		END checked
+		FROM
+			system_menu t
+		LEFT JOIN system_role_menu t2 ON t.menu_id = t2.menu_id
+		AND t2.role_id = #{roleId,jdbcType=INTEGER}
+		WHERE
+			parent_id > 0
+		AND STATUS = 1
+		ORDER BY
+			t.sort
+	</select>
+	<select id="selectDataRangeByRoleId" resultType="map" parameterType="java.lang.Integer">
+		select 
+			t.*,
+			t2.menu_id,
+			IFNULL((select 
+						case 
+							when t3.role_id is null then 0 
+							else 1 end checked 
+					from 
+						system_role_menu t3
+					where
+						t3.menu_id = t2.menu_id
+						and t3.opt_scope = t.value 
+						and t3.role_id = #{roleId,jdbcType=INTEGER})
+					,0) checked
+		from
+			(
+			select 
+				1 value, '自己' name 
+			from 
+				 dual 
+			union ALL
+			select 
+				2 value, '部门' name 
+			from 
+				dual
+			union ALL
+			select 
+				3 value, '公司' name 
+			from 
+				dual
+			) t ,system_menu t2 
+		where
+			t2.parent_id != 0 
+			and status = 1
+		order by 
+			t2.menu_id, t.value
+	</select>
+	<select id="getMenuByOperatorId" resultType="map" parameterType="java.lang.Integer">
+		SELECT DISTINCT
+			t1.*, (
+				SELECT
+					max(t4.opt_scope)
+				FROM
+					system_role_menu t4
+				WHERE
+					t4.menu_id = t1.menu_id
+			) opt_scope
+		FROM
+			system_menu t1,
+			system_role_menu t2,
+			system_operator_role t3
+		WHERE
+			t1.menu_id = t2.menu_id
+		AND t2.role_id = t3.role_id
+		AND t3.operator_id = #{operatorId,jdbcType=INTEGER}
+		AND t1. STATUS = 1
+		ORDER BY
+			t1.sort
+	</select>
+	<select id="getMenuByOperatorId4Super" resultType="map">
+		SELECT DISTINCT
+			t1.*, '3' opt_scope
+		FROM
+			system_menu t1
+		WHERE
+			t1.menu_id
+		AND t1. STATUS = 1
+		AND (
+			t1.menu_id = 1
+			OR t1.parent_id = 1
+		)
+		ORDER BY
+			t1.sort
+	</select>
+	<select id="selectAll" resultMap="BaseResultMap">
+		select
+			<include refid="Base_Column_List" />
+		from 
+			system_menu
+	</select>
+	<select id="getMenuByDefaultPlatform" resultType="map">
+		SELECT DISTINCT
+			t1.*, (
+				SELECT
+					max(t4.opt_scope)
+				FROM
+					system_role_menu t4
+				WHERE
+					t4.menu_id = t1.menu_id
+			) opt_scope
+		FROM
+			system_menu t1
+		WHERE
+			menu_id IN (1, 9)
+		ORDER BY
+			t1.sort
+	</select>
+</mapper>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>提现类型</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+		
+		<#include "/include/import.html"/>
+		<#include "/include/importother.html"/>
+		<link rel="stylesheet" href="${basePath}/assets/other/css/ace.min.css" />
+	</head>
+	<body class="no-skin">
+		<div class="main-container" id="main-container">
+			<div class="main-content">
+				<div class="page-content">
+					<div class="page-content-area">
+						
+						<input id="typeId" type="hidden" type="text" >
+					
+						<!-- 以上div层必写 -->
+						<div class="row">
+							<div class="col-xs-12">
+								<div class="row">
+									<div class="col-sm-9">
+										<@shiro.hasPermission name="drawmoeny:save">
+										<button id="add" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-plus blue"></i> 创建
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="drawmoeny:save">
+										<button id="edit" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 修改
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="drawmoeny:updatdstatus">
+										<button id="updatdstatus" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 启用/禁用
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="drawmoeny:delete">
+										<button id="delete" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-trash red"></i> 删除
+										</button>
+										</@shiro.hasPermission>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-12">
+								<div class="row">
+									<div class="col-sm-12">
+										<table id="grid-table"></table>
+										<div id="grid-pager"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="addTypeDiv" class="hide">
+			<div class="row">
+				<div class="col-xs-12">
+					<form class="form-horizontal" role="form">
+					
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="typeName">类型名称</label>
+							<div class="col-sm-9">
+								<input type="text" id="typeName" style="width: 280px;" placeholder="类型名称">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="typeName"></label>
+							<div class="col-sm-9">
+								<input type="text" id="typeName_th" style="width: 280px;" placeholder="类型名称-泰文">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" style="line-height: 50px;"> 类型-LOGO </label>
+							<div class="col-sm-5">
+								<div class="clearfix" style="float: left;line-height: 55px;">
+									<button id="typeLogoButton" class="btn btn-white btn-default btn-round uploadFile" style="margin: 30px;"/>
+								</div>
+								<div class="clearfix" style="float: left;line-height: 55px;">
+									<img alt="类型-LOGO" id="typeLogoImg" style="height: 100px;width: 200px;">
+								</div>
+								<input id="typeLogo" type="hidden" type="text" >
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="converstion">提现比率</label>
+							<div class="col-sm-9">
+								<input type="text" id="converstion" style="width: 280px;" placeholder="提现比率">
+								&nbsp;&nbsp;&nbsp;(按照提现1点对应类型的比率为多少填写)
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../manager/drawmoney/js/drawmoneyindex.js"></script>
+</html>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.notice.proxy.NoticeProxy">
+
+	<sql id="getNoticeListBaseSql">
+		AND a.del_flag = 1
+		<if test="status != null">
+			AND a.status = #{status}
+		</if>
+		<if test="type != null">
+			AND a.type = #{type}
+		</if>
+	</sql>
+
+	<select id="getNoticeList" resultType="map">
+		SELECT
+			a.notice_id,
+			a.title,
+			a.title_th,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') create_time,
+			a.status,
+			a.type,
+			a.content,
+			a.content_th,
+			IFNULL(b.operator_name,'admin') operator_name
+		FROM
+			notice a LEFT JOIN system_operator b ON a.create_operator = b.operator_id
+		<where>
+			<include refid="getNoticeListBaseSql"/>
+		</where>
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT 
+			#{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	
+	<select id="getNoticeListCount" resultType="java.lang.Long">
+		SELECT
+			count(a.notice_id)
+		FROM
+			notice a
+		<where>
+			<include refid="getNoticeListBaseSql"/>
+		</where>
+	</select>
+	
+	<update id="updateStatus">
+		UPDATE 
+			notice
+		SET 
+			status = ABS(status - 1)
+		WHERE
+			FIND_IN_SET(notice_id, #{noticeIds})
+	</update>
+	
+	<update id="delete">
+		UPDATE 
+			notice
+		SET 
+			del_flag = 0
+		WHERE
+			FIND_IN_SET(notice_id, #{noticeIds})
+	</update>
+	
+	<insert id="addInfo">
+		INSERT INTO 
+			notice (title, title_th, content, content_th, status, type, create_operator)
+		VALUES
+			(#{title},#{title_th},#{content},#{content_th},#{status},#{type}, #{operator.operatorId})
+	</insert>
+	
+	<update id="updateInfo">
+		UPDATE 
+			notice
+		SET 
+			title = #{title},
+			title_th=#{title_th},
+			content = #{content},
+			content_th = #{content_th},
+			status = #{status},
+			type = #{type}
+		WHERE
+			notice_id = #{noticeId}
+	</update>
+</mapper>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>VIP等级管理</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+		
+		<#include "/include/import.html"/>
+		<#include "/include/importother.html"/>
+		<link rel="stylesheet" href="${basePath}/assets/other/css/ace.min.css" />
+	</head>
+	<body class="no-skin">
+		<div class="main-container" id="main-container">
+			<div class="main-content">
+				<div class="page-content">
+					<div class="page-content-area">
+						<!-- 以上div层必写 -->
+						<div class="row">
+							<div class="col-xs-12">
+								<div class="row">
+									<div class="col-sm-12">
+										<@shiro.hasPermission name="vipparam:save">
+										<button id="add" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-plus blue"></i> 创建
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="vipparam:save">
+										<button id="edit" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 修改
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="vipparam:delete">
+										<button id="delete" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-trash red"></i> 删除
+										</button>
+										</@shiro.hasPermission>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-12">
+								<table id="grid-table"></table>
+								<div id="grid-pager"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="editInfoDiv" class="hide">
+			<div class="row">
+				<div class="col-xs-12">
+					<form class="form-horizontal" role="form">
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="vipname">VIP等级名称</label>
+							<div class="col-sm-9">
+								<input type="text" id="vipname" style="width: 280px;" placeholder="VIP等级名称">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="level">VIP等级</label>
+							<div class="col-sm-9">
+								<input type="text" id="level" style="width: 280px;" placeholder="VIP等级">&nbsp;&nbsp;(0--无穷大)
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="recommendTotal">VIP直推需达到人数</label>
+							<div class="col-sm-9">
+								<input type="text" id="recommendTotal" style="width: 280px;" placeholder="VIP直推需要达到人数">&nbsp;&nbsp;(整数)
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="teamuserTotal">VIP团队需达到人数</label>
+							<div class="col-sm-9">
+								<input type="text" id="teamuserTotal" style="width: 280px;" placeholder="VIP团队需要达到人数">&nbsp;&nbsp;(整数)
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="needLevel">VIP需直推人员星级</label>
+							<div class="col-sm-9">
+								<select id="needLevel" name="needLevel" style="width: 280px;" data-placeholder="VIP需要直推人员星级"  url="../common/getmemberuserlevel" ></select>
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="needLevelTotal">VIP需直推人员星级人数</label>
+							<div class="col-sm-9">
+								<input type="text" id="needLevelTotal" style="width: 280px;" placeholder="VIP需要直推人员星级人数">&nbsp;&nbsp;(整数)
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="interestRate">VIP团队收益点数</label>
+							<div class="col-sm-9">
+								<input type="text" id="interestRate" style="width: 280px;" placeholder="VIP团队收益点数">%&nbsp;&nbsp; (最多两位小数)
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="remark">VIP描述</label>
+							<div class="col-sm-9">
+								<textarea rows="3" id="remark" style="width: 280px;" placeholder="VIP描述"></textarea>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../manager/vipparam/js/vipparamindex.js"></script>
+</html>

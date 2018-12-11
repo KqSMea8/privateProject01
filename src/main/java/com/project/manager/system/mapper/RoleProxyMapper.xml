@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.system.proxy.RoleProxy">
+	<resultMap id="systemRoleResultMap" type="com.project.manager.system.entity.SystemRoleEntity" >
+		<id column="role_id" property="roleId" jdbcType="INTEGER" />
+		<result column="role_code" property="roleCode" jdbcType="VARCHAR" />
+		<result column="role_name" property="roleName" jdbcType="VARCHAR" />
+		<result column="role_type" property="roleType" jdbcType="VARCHAR" />
+		<result column="descript" property="descript" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		<result column="is_super" property="isSuper" jdbcType="INTEGER" />
+	</resultMap>
+	
+	<resultMap id="menuTreeResultMap" type="com.project.common.jqgrid.TreeNodeEntity" >
+		<id column="menu_id" property="menuId" jdbcType="VARCHAR" />
+		<result column="parent_id" property="parentId" jdbcType="VARCHAR" />
+		<result column="menu_name" property="menuName" jdbcType="VARCHAR" />
+		<result column="menu_css" property="menuCss" jdbcType="VARCHAR" />
+		<result column="menu_url" property="menuUrl" jdbcType="VARCHAR" />
+		<result column="is_button" property="isButton" jdbcType="INTEGER" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		<result column="id" property="id" jdbcType="VARCHAR" />
+		<result column="name" property="name" jdbcType="VARCHAR" />
+		<result column="checked" property="checked" jdbcType="VARCHAR" />
+		<result column="state" property="state" jdbcType="VARCHAR" />
+	</resultMap>
+	
+	<sql id="pageSql">
+		SELECT
+			a.role_id,
+			a.role_code,
+			a.role_name,
+			a.role_type,
+			a.descript,
+			a. STATUS
+		FROM
+			system_role a
+		<where>
+			<if test="status != null">
+				AND a.status = #{status}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="getGridData" resultMap="systemRoleResultMap">
+		<include refid="pageSql"/>
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT #{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	
+	<select id="getGridDataCount" resultType="java.lang.Long">
+		SELECT
+			count(*)
+		FROM
+			(<include refid="pageSql"/>) t
+	</select>
+	
+	<select id="getMenuTree" resultMap="menuTreeResultMap">
+		SELECT
+			a.*, a.menu_id id,
+			a.menu_name text,
+			'false' checked,
+			'open' state
+		FROM
+			system_menu a
+		<where>
+			AND a.parent_id = #{parentId}
+			AND a.status = 1
+			AND a.menu_id NOT like '99%'
+		</where>
+		ORDER BY
+			a.sort
+	</select>
+	
+	<select id="getRolePermission" resultMap="menuTreeResultMap">
+		SELECT
+			a.*
+		FROM
+			system_menu a,
+			system_role_menu c
+		<where>
+			AND a.menu_id = c.menu_id
+			AND c.role_id = #{roleId}
+			AND a.status = 1
+			AND a.menu_id NOT like '99%'
+		</where>
+	</select>
+	
+	<select id="isExistsByName" resultType="java.lang.Integer">
+		SELECT
+			count(*)
+		FROM
+			system_role
+		<where>
+			AND role_name = #{role.roleName}
+		</where>
+	</select>
+
+	<insert id="insertRole" parameterType="com.project.manager.system.entity.SystemRoleEntity" useGeneratedKeys="true" keyProperty="roleId">
+		INSERT INTO system_role (
+			role_id,
+			role_code,
+			role_name,
+			role_type,
+			descript
+		)
+		VALUES
+			(#{roleId} ,#{roleCode}, #{roleName}, #{roleType}, #{descript});
+	</insert>
+	
+	<select id="isExistsByIdName" resultType="java.lang.Integer">
+		SELECT
+			count(*)
+		FROM
+			system_role
+		<where>
+			AND role_name = #{roleName}
+			AND role_id != #{roleId}
+		</where>
+	</select>
+	
+	<update id="updateRoleName">
+		UPDATE
+			system_role
+		Set
+			role_name = #{roleName}
+		<where>
+			AND role_id = #{roleId}
+		</where>
+	</update>
+	
+	<update id="updateRoleStatus">
+		UPDATE
+			system_role
+		Set
+			status = ABS(status - 1)
+		<where>
+			AND role_id = #{roleId}
+		</where>
+	</update>
+	
+	<delete id="delRolePermission">
+		DELETE FROM system_role_menu
+		<where>
+			AND role_id = #{roleId}
+		</where>
+	</delete>
+	
+	<insert id="saveRolePermission">
+		INSERT INTO system_role_menu (
+			role_id,
+			menu_id
+		)
+		VALUES
+			(#{roleId},  #{menuId})
+	</insert>
+</mapper>

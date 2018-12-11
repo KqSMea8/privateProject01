@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>僵尸会员</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+		
+		<#include "/include/import.html"/>
+		<#include "/include/importother.html"/>
+	</head>
+	<body class="no-skin">
+		<div class="main-container" id="main-container">
+			<div class="main-content">
+				<div class="page-content">
+					<div class="page-content-area">
+						<!-- 以上div层必写 -->
+						<div class="row">
+							<div class="col-xs-12">
+								<div class="row">
+									<div class="col-sm-12">
+										<button id="search" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-search green"></i>
+											搜索
+										</button>
+										<@shiro.hasPermission name="memberuser:open">
+										<button id="activation" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 激活会员
+										</button>
+										</@shiro.hasPermission>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-12">
+								<table id="grid-table"></table>
+								<div id="grid-pager"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="condition" class="hide">
+			<div class="row">
+				<div class="col-xs-12">
+					<form class="form-horizontal" role="form">
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="userName">会员名称</label>
+							<div class="col-sm-9">
+								<input type="text" id="userName" style="width: 200px;" placeholder="会员名称">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="userAccount">登录帐号</label>
+							<div class="col-sm-9">
+							<input type="text" id="userAccount" style="width: 200px;" placeholder="登录帐号">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="userTel">会员电话</label>
+							<div class="col-sm-9">
+							<input type="text" id="userTel" style="width: 200px;" placeholder="会员电话">
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../manager/memberuser/js/memberuserdeathlist.js"></script>
+</html>

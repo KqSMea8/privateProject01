@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.system.proxy.PermissionProxy">
+	<resultMap id="systemMenuResultMap" type="com.project.manager.system.entity.SystemMenuEntity" >
+		<id column="menu_id" property="menuId" jdbcType="VARCHAR" />
+		<result column="parent_id" property="parentId" jdbcType="VARCHAR" />
+		<result column="menu_name" property="menuName" jdbcType="VARCHAR" />
+		<result column="menu_css" property="menuCss" jdbcType="VARCHAR" />
+		<result column="menu_url" property="menuUrl" jdbcType="VARCHAR" />
+		<result column="is_button" property="isButton" jdbcType="INTEGER" />
+		<result column="sort" property="sort" jdbcType="INTEGER" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+	</resultMap>
+	
+	<select id="getAllPermission" resultMap="systemMenuResultMap">
+		SELECT
+			a.menu_id,
+			a.menu_name,
+			a.menu_url,
+			a.menu_css,
+			a.parent_id,
+			a.is_button,
+			a.sort,
+			a.status
+		FROM
+			system_menu a
+		<where>
+			AND a.menu_url is not null
+			AND a.status = 1
+		</where>
+	</select>
+	
+	<select id="getOperatorPermission" resultMap="systemMenuResultMap">
+		SELECT
+			a.menu_id,
+			a.menu_name,
+			a.menu_url,
+			a.menu_css,
+			a.parent_id,
+			a.is_button,
+			a.sort,
+			a.status
+		FROM
+			system_menu a,
+			system_role_menu c,
+			system_operator_role d,
+			system_operator e
+		<where>
+			AND a.menu_id  = c.menu_id
+			AND c.role_id = d.role_id
+			AND e.operator_id = d.operator_id
+			AND a. STATUS = 1
+			AND a.menu_url IS NOT NULL
+			AND e.operator_account = #{accountNo}
+		</where>
+	</select>
+	
+	<select id="getSysAdminPermission" resultMap="systemMenuResultMap">
+		SELECT
+			*
+		FROM
+			system_menu
+		<where>
+			AND menu_url IS NOT NULL
+		</where>
+	</select>
+</mapper>

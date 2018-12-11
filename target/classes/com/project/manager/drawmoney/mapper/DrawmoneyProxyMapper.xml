@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.drawmoney.proxy.DrawmoneyProxy">
+	
+	<select id="getDrawmoneyList" resultType="map">
+		SELECT
+			drawmoney_type_id,
+			drawmoney_type_name,
+			drawmoney_type_name_th,
+			drawmoney_type_logo,
+			converstion,
+			status
+		FROM
+			drawmoney_type
+		WHERE
+			del_flag = 1
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT 
+			#{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	
+	<select id="getDrawmoneyListCount" resultType="java.lang.Long">
+		SELECT
+			count(1)
+		FROM
+			drawmoney_type
+		WHERE
+			del_flag = 1
+	</select>
+	
+	<update id="updateStatus">
+		UPDATE
+			drawmoney_type
+		SET
+			status = ABS(status - 1)
+		WHERE
+			drawmoney_type_id = #{drawmoneyTypeId}
+	</update>
+	
+	<update id="delete">
+		UPDATE
+			drawmoney_type
+		SET
+			del_flag = 0
+		WHERE
+			drawmoney_type_id = #{drawmoneyTypeId}
+	</update>
+	
+	<insert id="addInfo">
+		INSERT INTO 
+			drawmoney_type (
+				drawmoney_type_name,
+				drawmoney_type_name_th,
+				drawmoney_type_logo,
+				converstion
+			)
+		VALUES
+			(
+				#{name},
+				#{name_th},
+				#{logourl},
+				#{converstion}
+			)
+	</insert>
+	
+	<update id="updateInfo">
+		UPDATE
+			drawmoney_type
+		SET
+			drawmoney_type_name = #{name},
+			drawmoney_type_name_th = #{name_th},
+			drawmoney_type_logo = #{logourl},
+			converstion = #{converstion}
+		WHERE
+			drawmoney_type_id = #{drawmoneyTypeId}
+	</update>
+</mapper>

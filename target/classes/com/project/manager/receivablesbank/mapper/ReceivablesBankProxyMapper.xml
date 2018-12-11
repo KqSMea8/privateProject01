@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.receivablesbank.proxy.ReceivablesBankProxy">
+	
+	<sql id="getReceivablesTypeListBaseSql">
+		AND a.del_flag = 1
+	</sql>
+
+	<select id="getReceivablesTypeList" resultType="map">
+		SELECT
+			a.receivables_type_id,
+			a.receivables_type_name,
+			a.status
+		FROM
+			receivables_type a
+		<where>
+			<include refid="getReceivablesTypeListBaseSql"/>
+		</where>
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT 
+			#{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	
+	<select id="getReceivablesTypeListCount" resultType="java.lang.Long">
+		SELECT
+			count(a.receivables_type_id)
+		FROM
+			receivables_type a
+		<where>
+			<include refid="getReceivablesTypeListBaseSql"/>
+		</where>
+	</select>
+
+	<sql id="getReceivablesBankListBaseSql">
+		AND a.del_flag = 1
+		<if test="typeId != null">
+			AND a.receivables_type_id = #{typeId}
+		</if>
+		AND EXISTS (SELECT receivables_type_id FROM receivables_type WHERE receivables_type_id = a.receivables_type_id AND del_flag = 1)
+	</sql>
+
+	<select id="getReceivablesBankList" resultType="map">
+		SELECT
+			a.receivables_bank_id,
+			a.bank_name,
+			a.bank_number,
+			a.bank_custom_name,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') create_time,
+			<!-- CASE a.status WHEN 1 THEN '是' WHEN 0 THEN '否' END status, -->
+			a.status,
+			a.bank_type,
+			a.conversion
+		FROM
+			receivables_bank a
+		<where>
+			<include refid="getReceivablesBankListBaseSql"/>
+		</where>
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT 
+			#{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	
+	<select id="getReceivablesBankListCount" resultType="java.lang.Long">
+		SELECT
+			count(a.receivables_bank_id)
+		FROM
+			receivables_bank a
+		<where>
+			<include refid="getReceivablesBankListBaseSql"/>
+		</where>
+	</select>
+	
+	<update id="setReceive">
+		UPDATE 
+			receivables_bank
+		SET 
+		<if test='receivablesBankId == null'>	
+			status = 0
+			WHERE
+				receivables_type_id = #{typeId}
+		</if>
+		<if test='receivablesBankId != null'>
+				status = 1
+			WHERE
+				receivables_bank_id = #{receivablesBankId}
+			AND receivables_type_id = #{typeId}
+		</if>
+	</update>
+	
+	<update id="updateReceiveStatus">
+		UPDATE 
+			receivables_bank
+		SET 
+			status = ABS(1-status)
+		WHERE
+			receivables_bank_id = #{receivablesBankId}
+		AND receivables_type_id = #{typeId}
+	</update>
+	
+	<update id="delete">
+		UPDATE 
+			receivables_bank
+		SET 
+			del_flag = 0
+		WHERE
+			receivables_bank_id = #{receivablesBankId}
+	</update>
+	
+	<insert id="addInfo">
+		INSERT INTO 
+			receivables_bank (bank_name, bank_number, bank_custom_name, bank_type, receivables_type_id
+			<if test="conversion != null">
+				, conversion
+			</if>
+			)
+		VALUES
+			(#{name},#{number},#{customName},#{type},#{typeId}
+			<if test="conversion != null">
+				,#{conversion}
+			</if>
+			)
+	</insert>
+	
+	<update id="updateInfo">
+		UPDATE 
+			receivables_bank
+		SET 
+			bank_name = #{name},
+			bank_number = #{number},
+			bank_custom_name = #{customName},
+			bank_type = #{type}
+			<if test="conversion != null">
+				, conversion = #{conversion}
+			</if>
+		WHERE
+			receivables_bank_id = #{receivablesBankId}
+	</update>
+	
+	<update id="updateStatus">
+		UPDATE 
+			receivables_type
+		SET 
+			status = ABS(status-1)
+		WHERE
+			FIND_IN_SET(receivables_type_id,#{receivablesTypeIds})
+	</update>
+	
+	<update id="deleteType">
+		UPDATE 
+			receivables_type
+		SET 
+			del_flag = 0
+		WHERE
+			FIND_IN_SET(receivables_type_id,#{receivablesTypeIds})
+	</update>
+	
+	<insert id="addType">
+		INSERT INTO 
+		receivables_type(receivables_type_name,logo_url)
+		VALUES(#{name},#{logoUrl})
+	</insert>
+</mapper>

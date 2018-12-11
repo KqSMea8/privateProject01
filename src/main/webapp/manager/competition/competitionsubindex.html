@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>赛事比分管理</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+		
+		<#include "/include/import.html"/>
+		<#include "/include/importother.html"/>
+	</head>
+	<body class="no-skin">
+		<div class="main-container" id="main-container">
+			<div class="main-content">
+				<div class="page-content">
+					<div class="page-content-area">
+						<!-- 以上div层必写 -->
+						<div class="row">
+							<div class="col-xs-12">
+								<div class="row">
+									<div class="col-sm-12">
+										<input type="hidden" id="competitionId" value="${competitionId}" />
+										<button id="search" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-search green"></i>
+											搜索
+										</button>
+										<@shiro.hasPermission name="competition:savesub">
+										<button id="add" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-plus blue"></i> 创建
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="competition:savesub">
+										<button id="edit" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 修改
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="competition:deletesub">
+										<button id="delete" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-trash red"></i> 删除
+										</button>
+										</@shiro.hasPermission>
+										<button id="backMain" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon fa fa-undo green"></i> 返回
+										</button>
+										<span style="margin-left: 20px;margin-bottom:-15px;font-size: 18px; color: red;">当前比赛：</span>
+										<span style="margin-bottom:-15px;font-size: 18px; color: green;">${vsName}</span>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-12">
+								<table id="grid-table"></table>
+								<div id="grid-pager"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div> 
+		<div id="condition" class="hide">
+			<div class="row">
+				<div class="col-xs-12">
+					<form class="form-horizontal" role="form">
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="status">类型</label>
+							<div class="col-sm-9">
+							<select  id="type" name="type" data-placeholder="类型"  url="../common/getcompetitionsubtype" ></select>
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="status">是否递减</label>
+							<div class="col-sm-9">
+							<select  id="isDecrease" name="isDecrease" data-placeholder="是否递减"  url="../common/getyesno" ></select>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+		<div id="editInfoDiv" class="hide">
+			<div class="row">
+				<div class="col-xs-12">
+					<form class="form-horizontal" role="form">
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="title">比分</label>
+							<div class="col-sm-9">
+								<input type="text" id="team1Result" style="width: 128px;" placeholder="球队1比分">
+								&nbsp;&nbsp;:&nbsp;&nbsp;
+								<input type="text" id="team2Result" style="width: 128px;" placeholder="球队2比分">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="title">全场总进球</label>
+							<div class="col-sm-9">
+								<input type="text" id="allResult" style="width: 280px;" placeholder="全场总进球">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="lossOdds">赔率</label>
+							<div class="col-sm-9">
+								<input type="text" id="lossOdds" style="width: 280px;" placeholder="赔率">% (最多两位小数)
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="canDealTotalCount">可交易总量</label>
+							<div class="col-sm-9">
+								<input type="text" id="canDealTotalCount" style="width: 280px;" placeholder="可交易总量"> (最多两位小数)
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="maxDealOneCount">单人最高限制金额</label>
+							<div class="col-sm-9">
+								<input type="text" id="maxDealOneCount" style="width: 280px;" placeholder="单人最高限制金额"> (最多两位小数) <br>为0时不限制上限
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="typeForEdit">类型</label>
+							<div class="col-sm-9">
+							<select  id="typeForEdit" name="typeForEdit" data-placeholder="类型"  url="../common/getcompetitionsubtype" ></select>
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="isBackPrincipal">是否归还本金</label>
+							<div class="col-sm-9">
+							<select  id="isBackPrincipal" name="isBackPrincipal" data-placeholder="是否归还本金"  url="../common/getyesno" ></select>
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="isBackPrincipal">是否其他比分</label>
+							<div class="col-sm-9">
+							<select  id="isOther" name="isOther" data-placeholder="是否其他比分"  url="../common/getyesno" ></select>
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="isDecreaseForEdit">是否递减</label>
+							<div class="col-sm-9">
+							<select  id="isDecreaseForEdit" name="isDecreaseForEdit" data-placeholder="是否递减"  url="../common/getyesno" ></select>
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="decreaseNum">递减比例</label>
+							<div class="col-sm-9">
+								<input type="text" id="decreaseNum" style="width: 280px;" placeholder="递减比例">% (最多两位小数)
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../manager/competition/js/competitionsubindex.js"></script>
+</html>

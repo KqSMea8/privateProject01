@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>理财产品管理</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+		
+		<#include "/include/import.html"/>
+		<#include "/include/importother.html"/>
+	</head>
+	<body class="no-skin">
+		<div class="main-container" id="main-container">
+			<div class="main-content">
+				<div class="page-content">
+					<div class="page-content-area">
+						<!-- 以上div层必写 -->
+						<div class="row">
+							<div class="col-xs-12">
+								<div class="row">
+									<div class="col-sm-12">
+										<button id="search" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-search green"></i>
+											搜索
+										</button>
+										<@shiro.hasPermission name="investment:save">
+										<button id="add" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-plus blue"></i> 创建
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="investment:save">
+										<button id="edit" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 修改
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="investment:updatestatus">
+										<button id="updateStatus" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 启用/禁用
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="investment:delete">
+										<button id="delete" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-trash red"></i> 删除
+										</button>
+										</@shiro.hasPermission>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-12">
+								<table id="grid-table"></table>
+								<div id="grid-pager"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="condition" class="hide">
+			<div class="row">
+				<div class="col-xs-12">
+					<form class="form-horizontal" role="form">
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="status">状态</label>
+							<div class="col-sm-9">
+							<select  id="status" name="status" data-placeholder="状态"  url="../common/getstatuscombo" ></select>
+							<!-- <select  id="status" name="status" data-placeholder="状态"  url="../common/getstatuscombo" selectval="1"></select> -->
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+		<div id="editInfoDiv" class="hide">
+			<div class="row">
+				<div class="col-xs-12">
+					<form class="form-horizontal" role="form">
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="name">名称</label>
+							<div class="col-sm-9">
+								<input type="text" id="name" style="width: 280px;" placeholder="名称">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="content">内容介绍</label>
+							<div class="col-sm-9">
+								<textarea rows="3" id="content" style="width: 280px;" placeholder="内容介绍"></textarea>
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="minDay">周期天数</label>
+							<div class="col-sm-9">
+								<input type="text" id="minDay" style="width: 280px;" placeholder="周期天数"> (整数)
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="startMoney">起始金额</label>
+							<div class="col-sm-9">
+								<input type="text" id="startMoney" style="width: 280px;" placeholder="起始金额"> (最多两位小数)
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="earnings">收益比例</label>
+							<div class="col-sm-9">
+								<input type="text" id="earnings" style="width: 280px;" placeholder="收益比例">% (最多两位小数)
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="statusForEdit">状态</label>
+							<div class="col-sm-9">
+							<select id="statusForEdit" name="statusForEdit" data-placeholder="状态"  url="../common/getstatuscombo"></select>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../manager/investment/js/investmentindex.js"></script>
+</html>

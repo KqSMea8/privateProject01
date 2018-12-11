@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.competition.proxy.CompetitionEarningsProxy">
+
+	<!-- 盈利收益基础sql -->
+	<sql id="profitSubIdsBaseSql">
+		SELECT
+			b.competition_sub_id
+		FROM
+			competition a,
+			competition_sub b
+		WHERE
+			a.competition_id = b.competition_id
+		AND (
+				(
+					b.is_other = 0 
+					AND (
+						(
+							(a.half_game_result_1 != b.team1_result OR a.half_game_result_2 != b.team2_result)
+							AND b.type = 1
+						)
+						OR (
+							(a.game_result_1 != b.team1_result OR a.game_result_2 != b.team2_result)
+							AND b.type = 2
+						)
+						OR (
+							((a.game_result_1 + a.game_result_2) &lt;= b.all_result)
+							AND b.type = 3
+						)
+						OR (
+							((a.game_result_1 + a.game_result_2) &gt;= b.all_result)
+							AND b.type = 4
+						)
+					)
+				) OR (
+					b.is_other = 1 
+					AND b.type = 1
+					AND EXISTS (
+						SELECT
+							sub.competition_id
+						FROM
+							competition_sub sub
+						WHERE
+							sub.competition_id = a.competition_id
+						AND sub.team1_result = a.half_game_result_1 
+						AND sub.team2_result = a.half_game_result_2 
+						AND sub.type = 1
+					)
+				) OR (
+					b.is_other = 1 
+					AND b.type = 2
+					AND EXISTS (
+						SELECT
+							sub.competition_id
+						FROM
+							competition_sub sub
+						WHERE
+							sub.competition_id = a.competition_id
+						AND sub.team1_result = a.game_result_1 
+						AND sub.team2_result = a.game_result_2 
+						AND sub.type = 2
+					)
+				)
+			)
+		AND a.competition_id = #{competitionId}
+	</sql>
+	
+	<!-- 亏损收益基础sql -->
+	<sql id="profitLossSubIdsBaseSql">
+		SELECT
+			b.competition_sub_id
+		FROM
+			competition a,
+			competition_sub b
+		WHERE
+			a.competition_id = b.competition_id
+		AND (
+				(
+					b.is_other = 0 
+					AND (
+						(
+							(a.half_game_result_1 = b.team1_result AND a.half_game_result_2 = b.team2_result)
+							AND b.type = 1
+						)
+						OR (
+							(a.game_result_1 = b.team1_result AND a.game_result_2 = b.team2_result)
+							AND b.type = 2
+						)
+						OR (
+							((a.game_result_1 + a.game_result_2) &gt; b.all_result)
+							AND b.type = 3
+						)
+						OR (
+							((a.game_result_1 + a.game_result_2) &lt; b.all_result)
+							AND b.type = 4
+						)
+					)
+				) OR (
+					b.is_other = 1 
+					AND b.type = 1 
+					AND !EXISTS (
+						SELECT
+							sub.competition_id
+						FROM
+							competition_sub sub
+						WHERE
+							sub.competition_id = a.competition_id
+						AND sub.team1_result = a.half_game_result_1 
+						AND sub.team2_result = a.half_game_result_2 
+						AND sub.type = 1
+					)
+				) OR (
+					b.is_other = 1
+					AND b.type = 2
+					AND !EXISTS (
+						SELECT
+							sub.competition_id
+						FROM
+							competition_sub sub
+						WHERE
+							sub.competition_id = a.competition_id
+						AND sub.team1_result = a.game_result_1 
+						AND sub.team2_result = a.game_result_2 
+						AND sub.type = 2
+					)
+				)
+			)
+		AND a.competition_id = #{competitionId}
+	</sql>
+	
+	<!-- 计算波胆盈利佣金 -->
+	<insert id="calculationCompetitionDealEarnings">
+		INSERT INTO 
+		competition_deal_earnings (
+			competition_deal_id,
+			deal_money,
+			proportions,
+			earnings_money,
+			user_id
+		) SELECT
+			dealInfo.competition_deal_id,
+			dealInfo.money,
+			dealInfo.proportions,
+			dealInfo.deal_money,
+			dealInfo.user_id
+		FROM
+			competition_deal_note dealInfo,(<include refid="profitSubIdsBaseSql"/>) profitSubIds
+		WHERE
+			dealInfo.competition_sub_id = profitSubIds.competition_sub_id
+		AND dealInfo.is_back = 0
+	</insert>
+	
+	<!-- 计算波胆亏损收益 -->
+	<insert id="calculationCompetitionDealLossEarnings">
+		INSERT INTO 
+			competition_deal_earnings (
+				competition_deal_id,
+				deal_money,
+				proportions,
+				earnings_money,
+				user_id
+			) SELECT
+				dealInfo.competition_deal_id,
+				dealInfo.money,
+				dealInfo.proportions,
+				-dealInfo.money,
+				dealInfo.user_id
+			FROM
+				competition_deal_note dealInfo,
+				(
+					<include refid="profitLossSubIdsBaseSql"/>
+					AND b.is_back_principal = 0
+				) profitSubIds
+			WHERE
+				dealInfo.competition_sub_id = profitSubIds.competition_sub_id
+			AND dealInfo.is_back = 0
+	
+	</insert>
+	
+	<!-- 波胆收益佣金入账（连本带收益） -->
+	<update id="updateUserBalanceByCompetitionDeal">
+		UPDATE 
+			USER u,(
+				SELECT
+					dealInfo.user_id,
+					IFNULL(SUM(dealInfo.money + dealInfo.deal_money),0) allEarnings
+				FROM
+					competition_deal_note dealInfo,(<include refid="profitSubIdsBaseSql"/>) profitSubIds
+				WHERE
+					dealInfo.competition_sub_id = profitSubIds.competition_sub_id
+				AND dealInfo.is_back = 0
+				GROUP BY
+					dealInfo.user_id
+			) earnings
+		SET 
+			u.balance = u.balance + earnings.allEarnings
+		WHERE
+			u.user_id = earnings.user_id
+	</update>
+	
+	<!-- 每个用户这个球赛的收益总额计算基础sql -->
+	<sql id="everyOneUserEarningsByCompetition">
+		SELECT
+			dealInfo.user_id,
+			IFNULL(SUM(dealInfo.deal_money),0) allEarnings
+		FROM
+			competition_deal_note dealInfo,(<include refid="profitSubIdsBaseSql"/>) profitSubIds
+		WHERE
+			dealInfo.competition_sub_id = profitSubIds.competition_sub_id
+		AND dealInfo.is_back = 0
+		GROUP BY
+			dealInfo.user_id
+	</sql>
+	
+	<!-- 计算直推佣金 -->
+	<insert id="calculationDirectEarnings">
+		INSERT INTO user_direct_earnings (
+			user_id,
+			direct_user_id,
+			total_money,
+			proportions,
+			earnings_money
+		) 
+		<include refid="calculationDirectEarningsBaseSql"/>
+		GROUP BY
+			aa.user_id
+	</insert>
+	
+	<!-- 直推佣金入账（收益提成） -->
+	<update id="updateUserBalanceByDirectEarnings">
+		UPDATE 
+			USER u,(
+				<include refid="calculationDirectEarningsBaseSql"/>
+				GROUP BY
+					bb.user_id
+			) earnings
+		SET 
+			u.balance = u.balance + earnings.totalEarngings
+		WHERE
+			u.user_id = earnings.user_id
+	</update>
+	
+	<!-- 计算基础佣金基础sql -->
+	<sql id="calculationDirectEarningsBaseSql">
+		SELECT
+			bb.user_id,
+			aa.user_id subUserId,
+			SUM(earngingsList.allEarnings) total,
+			(<include refid="baseParamForDirectSql"/>) proportion,
+			CONVERT (
+				SUM(earngingsList.allEarnings) * (<include refid="baseParamForDirectSql"/>),
+				DECIMAL (15, 2)
+			) totalEarngings
+		FROM
+			(
+				<include refid="everyOneUserEarningsByCompetition"/>
+			) earngingsList,
+			user aa,
+			user bb
+		WHERE
+			earngingsList.user_id = aa.user_id
+		AND aa.parent_id = bb.user_id
+	</sql>
+	
+	<!-- 直推佣金参数获取基础sql -->
+	<sql id="baseParamForDirectSql">
+		SELECT
+			param_value
+		FROM
+			system_param
+		WHERE
+			param_category = 'commissionRecommend'
+	</sql>
+	
+	<!-- 获取某一级别的用户的收益数据 -->
+	<select id="calculationGroupEarningsByCondition" resultType="map">
+		SELECT
+			IFNULL(SUM(earningsList.allEarnings),0) total,
+			IFNULL((<include refid="vipUserEarningsProportionSql"/>)
+			<if test='isReduce == 1'>
+				* (<include refid="baseParamForGroupSql"/>)
+			</if>
+			,0)
+			 proportion,
+			IFNULL(CONVERT (SUM(earningsList.allEarnings) * (<include refid="vipUserEarningsProportionSql"/>)
+				<if test='isReduce == 1'>
+					* (<include refid="baseParamForGroupSql"/>)
+				</if>
+				,
+				DECIMAL (15, 2)
+			),0) totalEarngings
+		FROM
+			(
+				<include refid="everyOneUserEarningsByCompetition"/>
+			) earningsList
+		WHERE
+			FIND_IN_SET(earningsList.user_id, #{userIds})
+	</select>
+	
+	<!-- 获取当前人的vip收益提成比例基础sql -->
+	<sql id="vipUserEarningsProportionSql">
+		SELECT
+			v.vip_interest_rate
+		FROM
+			vip_param v,
+			USER u
+		WHERE
+			v.vip_level = u.now_level
+		AND u.user_id = #{userId}
+	</sql>
+	
+	<!-- 获取团队提成减幅比例参数基础sql -->
+	<sql id="baseParamForGroupSql">
+		SELECT
+			param_value
+		FROM
+			system_param
+		WHERE
+			param_category = 'halfGroupEaringsProportion'
+	</sql>
+	
+	<!-- 获取该场球赛的所有收益人ID-->
+	<select id="getAllUser" resultType="java.lang.Integer">
+		SELECT user_id FROM user<!-- (<include refid="everyOneUserEarningsByCompetition"/>) data -->
+	</select>
+	
+	<!-- 获取团队队长用户ID -->
+	<select id="getGroupList" resultType="java.lang.Integer">
+		SELECT
+			parent_id
+		FROM
+			user
+		WHERE
+			user_id = #{userId}
+	</select>
+	
+	<!-- 获取下一级的所有用户ID -->
+	<select id="getNextLevelUserIds" resultType="java.lang.String">
+		SELECT
+			GROUP_CONCAT(user_id)
+		FROM
+			user
+		WHERE
+			FIND_IN_SET(parent_id,#{userIds})
+	</select>
+	
+	<!-- 保存团队佣金数据 -->
+	<insert id="insertGroupEarningsData">
+		INSERT INTO 
+		user_group_earnings (
+			user_id,
+			group_user_id,
+			group_normal_money_total,
+			group_normal_money_total_proportions,
+			group_normal_money_total_earnings,
+			group_half_money_total,
+			group_half_money_total_proportions,
+			group_half_money_total_earnings,
+			group_half_proportions,
+			all_earnings
+		)
+		VALUES
+			(
+				#{userId},
+				#{groupUserId},
+				#{groupNormalMoneyTotal},
+				#{groupNormalMoneyProportions},
+				#{groupNormalMoneyEearnings},
+				#{groupHalfMoneyTotal},
+				#{groupHalfMoneyProportions},
+				#{groupHalfMoneyEearnings},	
+				#{halfGroupEaringsProportion},	
+				#{allEarnings}
+			)
+	</insert>
+	
+	<!-- 退还本金 -->
+	<update id="backPrincipal">
+		UPDATE 
+			user u,
+		 	competition_deal_note c,
+			(
+				<include refid="profitLossSubIdsBaseSql"/>
+				AND b.is_back_principal = 1
+			) d
+		SET 
+			u.balance = u.balance + c.money,
+		 	c.is_back = 1
+		WHERE
+			u.user_id = c.user_id
+		AND c.is_back = 0
+		AND c.competition_sub_id = d.competition_sub_id
+	</update>
+	
+	<update id="settlementGroupEarnings">
+		UPDATE 
+			USER a,(
+					SELECT
+						SUM(all_earnings) allEarnings,user_id
+					FROM
+						user_group_earnings
+					WHERE
+						STATUS = 0
+					AND datediff(now(), create_time) &gt; (SELECT param_value FROM system_param WHERE param_category = 'teamMoneyCloseDays')
+					GROUP BY
+						user_id
+				) b
+		SET 
+			a.balance = a.balance + b.allEarnings
+		WHERE
+			a.user_id = b.user_id
+	</update>
+	
+	<update id="updateGroupEarningsStatus">
+		UPDATE 
+			user_group_earnings
+		SET 
+			status = 1
+		WHERE
+			STATUS = 0
+		AND datediff(now(), create_time) &gt; (SELECT param_value FROM system_param WHERE param_category = 'teamMoneyCloseDays')
+	</update>
+</mapper>

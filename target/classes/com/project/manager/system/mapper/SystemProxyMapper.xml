@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.system.proxy.SystemProxy">
+	<sql id="roleMenuBaseSql">
+		SELECT
+			srm.menu_id
+		FROM
+			system_role_menu srm,
+			system_operator so,
+			system_role sr,
+			system_operator_role sor
+		WHERE
+			sr.role_id = srm.role_id
+		AND sr.role_id = sor.role_id
+		AND sr.status = 1
+		AND sor.operator_id = so.operator_id
+		AND so.operator_id = #{operator.operatorId}
+	</sql>
+	
+	<select id="getMyMainMenuPower" resultType="map">
+		SELECT 
+			* 
+		FROM 
+			system_menu 
+		WHERE 
+			status = 1 
+			AND parent_id = 0 
+			AND is_button = 0
+			AND menu_id NOT LIKE '99%'
+			AND menu_id in (
+				<include refid="roleMenuBaseSql"/>
+			) 
+		order by sort
+	</select>
+
+	<select id="getMySubMenuPower" parameterType="java.lang.Integer" resultType="map">
+		select 
+			* 
+		from 
+			system_menu 
+		where 
+			status = 1 
+		and parent_id = #{parentId} 
+		and is_button = 0  
+		AND menu_id in (
+			<include refid="roleMenuBaseSql"/>
+		)
+		AND menu_id NOT LIKE '99%'
+		order by sort
+	</select>
+	
+	<select id="getAllParam" resultType="map">
+		select * from system_param order by param_category,serial
+	</select>
+	
+	<select id="getAdminMainMenuPower" resultType="map">
+		SELECT * FROM system_menu WHERE status = 1 AND parent_id = 0 AND is_button = 0 order by sort
+	</select>
+	
+	<select id="getAdminMenuPwoer" resultType="map"  parameterType="java.lang.Integer">
+		select * from system_menu where status = 1 and parent_id = #{parentId} and is_button = 0 order by sort
+	</select>
+	
+	<update id="setSystemParams">
+		UPDATE 
+			system_param
+		SET 
+		 	param_value = #{value}
+		WHERE
+			param_category = #{category}
+	</update>
+	
+	<select id="getMemberUserLevel" resultType="com.project.manager.system.entity.CommonComboEntity">
+		SELECT
+			vip_name text,
+			vip_level id,
+			vip_level value
+		FROM
+			vip_param
+		WHERE
+			del_flag = 1
+	</select>
+	
+	<select id="getReportDataOfMoney" resultType="map">
+		SELECT 
+			IFNULL(SUM(CASE WHEN type = 1 AND status = 1 THEN money ELSE 0 END),0) allRecharge,
+			IFNULL(SUM(CASE WHEN type = 2 AND status = 1 THEN money ELSE 0 END),0) allExtract,
+			IFNULL(SUM(CASE WHEN type = 2 AND status = 1 THEN money ELSE 0 END),0) * IFNULL((SELECT param_value FROM system_param WHERE param_category = 'serviceCharge'),0) allExtractServiceCharge,
+			IFNULL(SUM(CASE WHEN type = 1 AND status = 1 AND DATE_FORMAT(audit_time,'%Y-%m-%d') = DATE_FORMAT(now(),'%Y-%m-%d') THEN money ELSE 0 END),0) todayRecharge,
+			IFNULL(SUM(CASE WHEN type = 2 AND status = 1 AND DATE_FORMAT(audit_time,'%Y-%m-%d') = DATE_FORMAT(now(),'%Y-%m-%d') THEN money ELSE 0 END),0) todayExtract,
+			IFNULL(SUM(CASE WHEN type = 2 AND status = 1 AND DATE_FORMAT(audit_time,'%Y-%m-%d') = DATE_FORMAT(now(),'%Y-%m-%d') THEN money ELSE 0 END) * IFNULL((SELECT param_value FROM system_param WHERE param_category = 'serviceCharge') ,0),0) todayExtractServiceCharge
+		FROM 
+			deal_log
+	</select>
+	
+	<select id="getReportDataOfUser" resultType="map">
+		SELECT
+			count(user_id) allUser,
+			sum(case status when 1 then 1 else 0 end) allActivationUser,
+			IFNULL(SUM(CASE WHEN DATE_FORMAT(create_time,'%Y-%m-%d') = DATE_FORMAT(now(),'%Y-%m-%d') THEN 1 ELSE 0 END),0) todayUser
+		FROM
+			user
+		WHERE 
+			del_flag = 1
+	</select>
+</mapper>

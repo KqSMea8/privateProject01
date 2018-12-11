@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>收款卡管理</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+		
+		<#include "/include/import.html"/>
+		<#include "/include/importother.html"/>
+		<link rel="stylesheet" href="${basePath}/assets/other/css/ace.min.css" />
+	</head>
+	<body class="no-skin">
+		<div class="main-container" id="main-container">
+			<div class="main-content">
+				<div class="page-content">
+					<div class="page-content-area">
+						
+						<input id="typeId" type="hidden" type="text" >
+					
+						<!-- 以上div层必写 -->
+						<div class="row">
+							<div class="col-xs-12">
+								<div class="row">
+									<div class="col-sm-3">
+										<@shiro.hasPermission name="receivablesbank:addtype">
+										<button id="addType" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-plus blue"></i> 添加类型
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="receivablesbank:updatetypestatus">
+										<button id="updateTypeStatus" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 启用/禁用
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="receivablesbank:deletetype">
+										<button id="deleteType" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 删除类型
+										</button>
+										</@shiro.hasPermission>
+									</div>
+									<div class="col-sm-9">
+										<@shiro.hasPermission name="receivablesbank:save">
+										<button id="add" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-plus blue"></i> 创建
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="receivablesbank:save">
+										<button id="edit" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 修改
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="receivablesbank:setreceive">
+										<button id="setreceive" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-edit blue"></i> 改变收款卡状态
+										</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="receivablesbank:delete">
+										<button id="delete" class="btn btn-white btn-default btn-round">
+											<i class="ace-icon icon-trash red"></i> 删除
+										</button>
+										</@shiro.hasPermission>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-12">
+								<div class="row">
+									<div class="col-sm-3">
+										<table id="grid-type-table"></table>
+										<div id="grid-type-pager"></div>
+									</div>
+									<div class="col-sm-9">
+										<table id="grid-table"></table>
+										<div id="grid-pager"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="addTypeDiv" class="hide">
+			<div class="row">
+				<div class="col-xs-12">
+					<form class="form-horizontal" role="form">
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="typeName">类型名称</label>
+							<div class="col-sm-9">
+								<input type="text" id="typeName" style="width: 280px;" placeholder="类型名称">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" style="line-height: 50px;"> 类型-LOGO </label>
+							<div class="col-sm-5">
+								<div class="clearfix" style="float: left;line-height: 55px;">
+									<button id="typeLogoButton" class="btn btn-white btn-default btn-round uploadFile" style="margin: 30px;"/>
+								</div>
+								<div class="clearfix" style="float: left;line-height: 55px;">
+									<img alt="类型-LOGO" id="typeLogoImg" style="height: 100px;width: 200px;">
+								</div>
+								<input id="typeLogo" type="hidden" type="text" >
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+		<div id="editInfoDiv" class="hide">
+			<div class="row">
+				<div class="col-xs-12">
+					<form class="form-horizontal" role="form">
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="bankName">帐号归属</label>
+							<div class="col-sm-9">
+								<input type="text" id="bankName" style="width: 280px;">（如：开户行）
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="number">币种收款帐号</label>
+							<div class="col-sm-9">
+								<input type="text" id="number" style="width: 280px;" placeholder="币种收款帐号">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="customName">开卡人姓名</label>
+							<div class="col-sm-9">
+								<input type="text" id="customName" style="width: 280px;" placeholder="开卡人姓名">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="type">卡种类型</label>
+							<div class="col-sm-9">
+								<input type="text" id="type" style="width: 280px;" placeholder="卡种类型">
+							</div>
+						</div>
+						
+						<div class="space-4"></div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label no-padding-right" for="conversion">点数比例</label>
+							<div class="col-sm-9">
+								<input type="text" id="conversion" style="width: 280px;" placeholder="点数比例">
+								<br/>(按照1点数对应币种比例填写；如人名币为1:1，则填写1)
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../manager/receivablesbank/js/receivablesbankindex.js"></script>
+</html>

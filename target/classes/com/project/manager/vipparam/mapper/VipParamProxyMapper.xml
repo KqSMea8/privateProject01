@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.vipparam.proxy.VipParamProxy">
+
+	<select id="getVipParamList" resultType="map">
+		SELECT
+			a.vip_param_id,
+			a.vip_name,
+			a.vip_level,
+			a.vip_recommend_total,
+			a.vip_teamuser_total,
+			a.need_level,
+			a.need_level_total,
+			CONCAT(TRUNCATE (a.vip_interest_rate*100,2),'%') vip_interest_rate,
+			a.vip_remark,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') create_time,
+			DATE_FORMAT(a.last_update_time,'%Y-%m-%d %T') last_update_time
+		FROM
+			vip_param a
+		<where>
+			AND a.del_flag = 1
+		</where>
+		ORDER BY
+			a.vip_level
+	</select>
+	
+	<select id="getVipParamListCount" resultType="java.lang.Long">
+		SELECT
+			count(a.vip_param_id)
+		FROM
+			vip_param a
+		<where>
+			AND a.del_flag = 1
+		</where>
+	</select>
+	
+	<update id="delete">
+		UPDATE 
+			vip_param
+		SET 
+			del_flag = 0,
+			del_time = now()
+		WHERE
+			vip_param_id = #{vipParamId}
+	</update>
+	
+	<select id="getMaxLevelHad" resultType="java.lang.Integer">
+		SELECT
+			MAX(a.vip_level)
+		FROM
+			vip_param a
+		<where>
+			AND a.del_flag = 1
+		</where>
+	</select>
+	
+	<insert id="addInfo">
+		INSERT INTO 
+			vip_param (vip_name, vip_level, vip_recommend_total, vip_teamuser_total,vip_interest_rate,vip_remark,need_level,need_level_total)
+		VALUES
+			(#{name},#{level},#{recommendTotal},#{teamuserTotal},#{interestRate},#{remark},#{needLevel},#{needLevelTotal})
+	</insert>
+	
+	<update id="updateInfo">
+		UPDATE 
+			vip_param
+		SET 
+			vip_name = #{name},
+			vip_level = #{level},
+			vip_recommend_total = #{recommendTotal},
+			vip_teamuser_total = #{teamuserTotal},
+			vip_interest_rate = #{interestRate},
+			vip_remark = #{remark},
+			last_update_time = now(),
+			need_level = #{needLevel},
+			need_level_total = #{needLevelTotal}
+		WHERE
+			vip_param_id = #{vipParamId}
+	</update>
+</mapper>

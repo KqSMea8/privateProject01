@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.system.proxy.OperatorProxy">
+	<resultMap id="systemOperatorResultMap" type="com.project.manager.system.entity.SystemOperatorEntity" >
+		<id column="operator_id" property="operatorId" jdbcType="INTEGER" />
+		<result column="operator_code" property="operatorCode" jdbcType="VARCHAR" />
+		<result column="operator_account" property="operatorAccount" jdbcType="VARCHAR" />
+		<result column="operator_pwd" property="operatorPwd" jdbcType="VARCHAR" />
+		<result column="operator_name" property="operatorName" jdbcType="VARCHAR" />
+		<result column="operator_tel" property="operatorTel" jdbcType="VARCHAR" />
+		<result column="operator_email" property="operatorEmail" jdbcType="VARCHAR" />
+		<result column="operator_job" property="operatorJob" jdbcType="INTEGER" />
+		<result column="birthday" property="birthday" jdbcType="VARCHAR" />
+		<result column="sex" property="sex" jdbcType="VARCHAR" />
+		<result column="idcode" property="idcode" jdbcType="VARCHAR" />
+		<result column="remark" property="remark" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+		<result column="status" property="status" jdbcType="INTEGER" />
+		<result column="delFlag" property="delFlag" jdbcType="INTEGER" />
+	</resultMap>
+	
+	<sql id="pageSql">
+		SELECT
+			operator_id,
+			operator_code,
+			operator_account,
+			operator_pwd,
+			operator_name,
+			operator_tel,
+			operator_email,
+			operator_job,
+			birthday,
+			sex,
+			idcode,
+			remark,
+			create_time,
+			status,
+			del_flag
+		FROM
+			system_operator
+		<where>
+			AND del_flag = 1
+		</where>
+	</sql>
+	<select id="getOperatorInfoById" resultMap="systemOperatorResultMap">
+		SELECT
+			a.operator_id,
+			a.operator_code,
+			a.operator_account,
+			a.operator_pwd,
+			a.operator_name,
+			a.operator_tel,
+			a.operator_email,
+			a.operator_job,
+			a.birthday,
+			a.sex,
+			a.idcode,
+			a.remark,
+			a.create_time,
+			a.status,
+			a.del_flag
+		FROM
+			system_operator a
+		<where>
+			AND a.status = 1
+			AND a.del_flag = 1
+			AND a.operator_id = #{operatorId}
+		</where>
+	</select>
+	
+	<select id="isExistsByAccountId" resultType="java.lang.Integer">
+		SELECT
+			count(*)
+		FROM
+			system_operator
+		<where>
+			AND operator_account = #{operatorAccount}
+			AND operator_id != #{operatorId}
+		</where>
+	</select>
+	
+	<update id="lock">
+		UPDATE
+			system_operator
+		SET
+			status = ABS(status - 1)
+		<where>
+			AND operator_id = #{operatorId}
+		</where>
+	</update>
+	
+	<update id="updateOperator">
+		UPDATE
+			system_operator
+		SET
+			operator_account = #{operatorAccount},
+			operator_code = #{operatorCode},
+			operator_name = #{operatorName},
+			operator_tel = #{operatorTel}
+		<where>
+			AND operator_id = #{operatorId}
+		</where>
+	</update>
+	
+	<select id="getGridData" resultMap="systemOperatorResultMap">
+		<include refid="pageSql"/>
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT 
+			#{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	
+	<select id="getGridDataCount" resultType="java.lang.Long">
+		SELECT
+			count(*)
+		FROM
+			(<include refid="pageSql"/>) t
+	</select>
+	
+	<select id="getOperatorInfoByAccount" resultMap="systemOperatorResultMap">
+		SELECT
+			a.operator_id,
+			a.operator_code,
+			a.operator_account,
+			a.operator_pwd,
+			a.operator_name,
+			a.operator_tel,
+			a.operator_email,
+			a.operator_job,
+			a.birthday,
+			a.sex,
+			a.idcode,
+			a.remark,
+			a.create_time,
+			a.status,
+			a.del_flag
+		FROM
+			system_operator a
+		<where>
+			AND a.status = 1
+			AND a.del_flag = 1
+			AND a.operator_account = #{accountNo}
+		</where>
+	</select>
+	
+	<select id="isExistsByAccount" resultType="java.lang.Integer">
+		SELECT
+			count(*)
+		FROM
+			system_operator
+		<where>
+			AND operator_account = #{operatorAccount}
+		</where>
+	</select>
+
+	<insert id="insertOperator" parameterType="com.project.manager.system.entity.SystemOperatorEntity" useGeneratedKeys="true" keyProperty="operatorId">
+		INSERT INTO system_operator (
+			operator_code,
+			operator_account,
+			operator_pwd,
+			operator_name,
+			operator_tel,
+			operator_email,
+			operator_job,
+			birthday,
+			sex,
+			idcode,
+			remark
+		)
+		VALUES
+			(
+				#{operatorCode}, #{operatorAccount}, #{operatorPwd}, #{operatorName},
+				 #{operatorTel}, #{operatorEmail}, #{operatorJob},#{birthday}, #{sex},#{idcode}, #{remark}
+			);
+	</insert>
+	
+	<update id="updatePwd" parameterType="com.project.manager.system.entity.SystemOperatorEntity">
+		update system_operator set operator_pwd = #{operator.operatorPwd} where operator_id = #{operator.operatorId} 
+	</update>
+	
+	<delete id="delOperatorPermission">
+		DELETE FROM system_operator_role
+		<where>
+			AND operator_id = #{operatorId}
+		</where>
+	</delete>
+	
+	<insert id="saveOperatorPermission">
+		INSERT INTO system_operator_role (
+			operator_id,
+			role_id
+		)
+		VALUES (#{operatorId}, #{roleId})
+	</insert>
+	
+	<select id="getOperatorRole" resultType="java.lang.String">
+		SELECT
+			GROUP_CONCAT(role_id)
+		FROM
+			system_operator_role
+		<where>
+			AND operator_id = #{operatorId}
+		</where>
+	</select>
+	
+	<select id="getOperatorByRoleId" resultMap="systemOperatorResultMap">
+		SELECT
+			a.*
+		FROM
+			system_operator a, system_operator_role b
+		<where>
+			AND a.operator_id = b.operator_id
+			AND b.role_id = #{roleId}
+			AND a.status = 1
+			AND a.del_flag = 1
+		</where>
+	</select>
+	
+	<update id="resetPwd">
+		UPDATE
+			system_operator
+		SET
+			operator_pwd = #{newPwd}
+		WHERE 
+			operator_id = #{operatorId}
+	</update>
+</mapper>

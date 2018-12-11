@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>角色管理</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+		<#include "/include/import.html"/>
+		<#include "/include/importother.html"/>
+		<link rel="stylesheet" href="${basePath}/assets/other/css/ace.min.css" />
+	</head>
+	<body class="no-skin">
+		<div class="main-container" id="main-container">
+			<div class="main-content">
+				<div class="page-content">
+					<div class="page-content-area">
+						<div class="page-header">
+							<h1>
+								系统管理
+								<small>
+									&gt;&gt;&nbsp;&nbsp;
+									角色管理
+								</small>
+							</h1>
+						</div>
+						
+						<!-- 以上div层必写 -->
+						<div class="row">
+							<div class="col-xs-12">
+								<div class="row">
+									<div class="col-sm-6">
+										<@shiro.hasPermission name="system:createrole">
+											<label> 角色名称： </label>
+											<input type="text" id="roleName" placeholder="输入角色名称">
+											<button id="add" class="btn btn-white btn-default btn-round">
+												<i class="ace-icon icon-plus green"></i> 创建角色
+											</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="system:updaterole">
+											<button id="edit" class="btn btn-white btn-default btn-round">
+												<i class="ace-icon icon-pencil blue"></i> 修改角色
+											</button>
+										</@shiro.hasPermission>
+										<@shiro.hasPermission name="system:lockrole">
+											<button id="lock" class="btn btn-white btn-default btn-round">
+												<i class="ace-icon icon-lock orange"></i> 禁用/启用
+											</button>
+										</@shiro.hasPermission>
+									</div>
+									<div class="col-sm-6">
+										<@shiro.hasPermission name="system:saverolepermission">
+											<button id="save" class="btn btn-white btn-default btn-round">
+												<i class="ace-icon icon-save green"></i> 保存权限
+											</button>
+										</@shiro.hasPermission>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-sm-6">
+										<table id="grid-table"></table>
+										<div id="grid-pager"></div>
+									</div>
+									<div class="col-sm-6">
+										<div id="tree" style="height:595px"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="../manager/system/role/js/rolelist.js"></script>
+	<script type="text/javascript" src="../manager/system/role/js/menutree.js"></script>
+</html>

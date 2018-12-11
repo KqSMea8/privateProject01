@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.manager.competition.proxy.CompetitionProxy">
+	
+	<sql id="getCompetitionListBaseSql">
+		AND a.del_flag = 1
+		<if test="status != null">
+			AND a.status = #{status}
+		</if>
+	</sql>
+
+	<sql id="getAllEarnings">
+		SELECT
+			SUM(
+				IF (
+					EXISTS (
+						SELECT
+							b.competition_sub_id
+						FROM
+							competition e,
+							competition_sub b
+						WHERE
+							e.competition_id = b.competition_id
+						AND (
+								(
+									b.is_other = 0 
+									AND (
+										(
+											e.half_game_result_1 = b.team1_result
+											AND e.half_game_result_2 = b.team2_result
+											AND b.type = 1
+										)
+										OR (
+											e.game_result_1 = b.team1_result
+											AND e.game_result_2 = b.team2_result
+											AND b.type = 2
+										)
+										OR (
+											((e.game_result_1 + e.game_result_2) &gt; b.all_result)
+											AND b.type = 3
+										)
+										OR (
+											((e.game_result_1 + e.game_result_2) &lt; b.all_result)
+											AND b.type = 4
+										)
+									)
+								) OR (
+									b.is_other = 1 AND 
+									(
+										!EXISTS (
+											SELECT
+												sub.competition_id
+											FROM
+												competition_sub sub
+											WHERE
+												sub.competition_id = e.competition_id
+											AND (
+												(sub.team1_result = e.half_game_result_1 AND sub.team2_result = e.half_game_result_2 AND sub.type = 1)
+												OR
+												(sub.team1_result = e.game_result_1 AND sub.team2_result = e.game_result_2 AND sub.type = 2)
+											)
+										)
+									)
+								)
+							)
+						AND b.is_back_principal != 1
+						AND b.competition_sub_id = c.competition_sub_id
+					),
+					c.money ,- c.deal_money
+				)
+			)
+		FROM
+			competition_deal_note c
+		WHERE
+			EXISTS (
+				SELECT
+					aa.competition_id
+				FROM
+					competition aa,
+					competition_sub bb
+				WHERE
+					aa.competition_id = a.competition_id
+				AND aa.competition_id = bb.competition_id
+				AND bb.competition_sub_id = c.competition_sub_id
+			)
+	</sql>
+	
+	<select id="getCompetitionList" resultType="map">
+		SELECT
+			a.competition_id,
+			a.title,
+			a.title_th,
+			CONCAT(a.name1,'VS',a.name2) vsName,
+			CONCAT(a.name1_th,'VS',a.name2_th) vsName_th,
+			DATE_FORMAT(a.game_begin_time,'%Y-%m-%d %T') game_begin_time,
+			a.status,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') create_time,
+			IFNULL(b.operator_name, 'admin') operator_name,
+			CONCAT(a.half_game_result_1,' : ',a.half_game_result_2) halfGameResult,
+			CONCAT(a.game_result_1,' : ',a.game_result_2) gameResult,
+			IF(a.result_input_operator = 0, 'admin',c.operator_name) result_input_operator,
+			DATE_FORMAT(a.result_input_time,'%Y-%m-%d %T') result_input_time,
+			IF(a.result_input_operator IS NULL , null,(<include refid="getAllEarnings"/>)) allEarnings
+		FROM
+			competition a
+		LEFT JOIN system_operator b ON a.create_operator = b.operator_id
+		LEFT JOIN system_operator c ON a.result_input_operator = c.operator_id
+		<where>
+			<include refid="getCompetitionListBaseSql"/>
+		</where>
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT 
+			#{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	 
+	<select id="getCompetitionListCount" resultType="java.lang.Long">
+		SELECT
+			count(a.competition_id)
+		FROM
+			competition a
+		<where>
+			<include refid="getCompetitionListBaseSql"/>
+		</where>
+	</select>
+	
+	<update id="updateStatus">
+		UPDATE 
+			competition
+		SET 
+			status = ABS(status - 1)
+		WHERE
+			FIND_IN_SET(competition_id, #{competitionIds})
+	</update>
+	
+	<update id="delete">
+		UPDATE 
+			competition
+		SET 
+			del_flag = 0
+		WHERE
+			FIND_IN_SET(competition_id, #{competitionIds})
+	</update>
+	
+	<update id="cancel">
+		UPDATE 
+			competition
+		SET 
+			status = 2
+		WHERE
+			FIND_IN_SET(competition_id, #{competitionIds})
+	</update>
+	
+	<select id="getCompetitionSubIds" resultType="java.lang.String">
+		SELECT
+			GROUP_CONCAT(competition_sub_id)
+		FROM
+			competition_sub
+		WHERE
+			FIND_IN_SET(competition_id, #{competitionIds})
+		AND	del_flag = 1
+	</select>
+	
+	<select id="getCompetitionInfoById" resultType="map">
+		SELECT 
+			* 
+		FROM 
+			competition
+		WHERE
+			del_flag = 1
+		AND competition_id = #{competitionId}
+	</select>
+	
+	<insert id="add">
+		INSERT INTO competition (
+			title,
+			title_th,
+			name1,
+			name1_th,
+			logo1,
+			name2,
+			name2_th,
+			logo2,
+			game_begin_time,
+			status,
+			create_operator
+		)
+		VALUES
+			(
+				#{title},
+				#{title_th},
+				#{name1},
+				#{name1_th},
+				#{logo1Url},
+				#{name2},
+				#{name2_th},
+				#{logo2Url},
+				#{gameBeginTime},
+				#{status},
+				#{operator.operatorId}
+			)
+	</insert>
+	
+	<update id="update">
+		UPDATE 
+			competition
+		SET 
+			title = #{title},
+			title_th = #{title_th},
+			name1 = #{name1},
+			name1_th = #{name1_th},
+			logo1 = #{logo1Url},
+			name2 = #{name2},
+			name2_th = #{name2_th},
+			logo2 = #{logo2Url},
+			game_begin_time = #{gameBeginTime},
+			status = #{status}
+		WHERE
+			competition_id = #{competitionId}
+	</update>
+	
+	<update id="setResult">
+		UPDATE 
+			competition
+		SET 
+			half_game_result_1 = #{halfGameResult1},
+			half_game_result_2 = #{halfGameResult2},
+			game_result_1 = #{gameResult1},
+			game_result_2 = #{gameResult2},
+			result_input_time = now()
+			<if test="operator == null">
+				,result_input_operator = null
+			</if>
+			<if test="operator != null">
+				,result_input_operator = #{operator.operatorId}
+			</if>
+		WHERE
+			competition_id = #{competitionId}
+	</update>
+	<!-- ================================================================================================= -->
+	
+	<sql id="getCompetitionSubListBaseSql">
+		AND a.competition_id = #{competitionId}
+		AND a.del_flag = 1
+		<if test='isDecrease != null'>
+			AND a.is_decrease = #{isDecrease}
+		</if>
+		<if test='type != null'>
+			AND a.type = #{type}
+		</if>
+	</sql>
+
+	<select id="getCompetitionSubList" resultType="map">
+		SELECT
+			a.competition_sub_id,
+			CONCAT(a.team1_result,' : ',a.team2_result) gameResult,
+			a.all_result,
+			CONCAT(TRUNCATE (a.loss_odds*100,2),'%') loss_odds,
+			a.can_deal_total_count,
+			a.can_deal_count,
+			IF(a.max_deal_one_count = 0,'不限',a.max_deal_one_count) max_deal_one_count,
+			a.type,
+			a.is_decrease,
+			CONCAT(TRUNCATE (a.decrease_num*100,2),'%') decrease_num,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') create_time,
+			IFNULL(b.operator_name, 'admin') operator_name,
+			a.team1_result,
+			a.team2_result,
+			a.is_back_principal,
+			a.is_other
+		FROM
+			competition_sub a
+		LEFT JOIN system_operator b ON a.create_operator = b.operator_id
+		<where>
+			<include refid="getCompetitionSubListBaseSql"/>
+		</where>
+		ORDER BY
+			${pageParams.sort} ${pageParams.order}
+		LIMIT 
+			#{pageParams.startRow}, #{pageParams.endRow}
+	</select>
+	
+	<select id="getCompetitionSubListCount" resultType="java.lang.Long">
+		SELECT
+			count(a.competition_id)
+		FROM
+			competition_sub a
+		<where>
+			<include refid="getCompetitionSubListBaseSql"/>
+		</where>
+	</select>
+	
+	<update id="deleteSub">
+		UPDATE 
+			competition_sub
+		SET 
+			del_flag = 0
+		WHERE
+			FIND_IN_SET(competition_sub_id, #{competitionSubIds})
+	</update>
+	
+	<update id="returnUserDeal">
+		UPDATE 
+			competition_deal_note a,user b
+		SET 
+			a.is_back = 1,
+		 	b.balance = b.balance + a.money
+		WHERE
+			a.user_id = b.user_id
+		AND is_back = 0
+		AND FIND_IN_SET(a.competition_sub_id, #{competitionSubIds})
+	</update>
+	
+	<insert id="addSubInfo">
+		INSERT INTO competition_sub (
+			competition_id,
+			team1_result,
+			team2_result,
+			all_result,
+			loss_odds,
+			can_deal_count,
+			can_deal_total_count,
+			max_deal_one_count,
+			type,
+			is_decrease,
+			decrease_num,
+			create_operator,
+			is_back_principal,
+			is_other
+		)
+		VALUES
+			(
+				#{competitionId},
+				#{team1Result},
+				#{team2Result},
+				#{allResult},
+				#{lossOdds},
+				#{canDealTotalCount},
+				#{canDealTotalCount},
+				#{maxDealOneCount},
+				#{type},
+				#{isDecrease},
+				#{decreaseNum},
+				#{operator.operatorId},
+				#{isBackPrincipal},
+				#{isOther}
+			)
+	</insert>
+	
+	<update id="updateSubInfo">
+		UPDATE 
+			competition_sub
+		SET 
+		 	team1_result = #{team1Result},
+		 	team2_result = #{team2Result},
+		 	all_result = #{allResult},
+		 	loss_odds = #{lossOdds},
+			can_deal_count = #{canDealTotalCount},
+		 	can_deal_total_count = #{canDealTotalCount},
+		 	max_deal_one_count = #{maxDealOneCount},
+		 	type = #{type},
+		 	is_decrease = #{isDecrease},
+		 	decrease_num = #{decreaseNum},
+			is_back_principal = #{isBackPrincipal},
+			is_other = #{isOther}
+		WHERE
+			competition_sub_id = #{competitionSubId}
+		AND competition_id = #{competitionId}
+	</update>
+</mapper>
