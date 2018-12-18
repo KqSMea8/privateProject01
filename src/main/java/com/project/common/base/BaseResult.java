@@ -11,6 +11,7 @@ public class BaseResult implements Serializable {
 	private String msg; // 返回消息
 	private boolean isSuccess; // 是否成功
 	private Object result; // 结果对象
+	private Integer code; // 状态码
 
 	public String getMsg() {
 		return msg;
@@ -34,5 +35,13 @@ public class BaseResult implements Serializable {
 
 	public void setResult(Object result) {
 		this.result = result;
+	}
+
+	public Integer getCode() {
+		return code;
+	}
+
+	public void setCode(Integer code) {
+		this.code = code;
 	}
 }
