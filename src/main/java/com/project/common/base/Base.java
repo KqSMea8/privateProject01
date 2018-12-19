@@ -1,6 +1,9 @@
 package com.project.common.base;
 
+import java.util.Random;
 import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +23,7 @@ public class Base {
 	private static Integer SUCCESS = 200;
 	private static Integer ERROR_PARAM = 400;
 	private static Integer ERROR = 500;
-	
+
 	@Autowired
 	public RedisUtil redisUtil;
 
@@ -85,8 +88,8 @@ public class Base {
 	 * @author chentianjin
 	 * @date 2017年4月25日
 	 */
-	protected String generateToken(Integer operatorId) {
-		return MD5Utils.Md532(System.currentTimeMillis() + YAN + operatorId);
+	protected String generateToken(String openId) {
+		return MD5Utils.Md532(System.currentTimeMillis() + YAN + openId);
 	}
 
 	protected BaseResult generateResult(Integer code, String msg, Object result) {
@@ -108,6 +111,30 @@ public class Base {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	/**
+	 * 获得4位数的验证码
+	 * 
+	 * @return String
+	 * @author chentianjin
+	 * @date 2017年5月12日
+	 */
+	public String makeVcode() {
+		Random random = new Random();
+		String encode = "0123456789";
+		String sRand = "";
+		for (int i = 0; i < 4; i++) {
+			String rand = encode.charAt(random.nextInt(10)) + "";
+			sRand += rand;
+		}
+		return sRand;
+	}
+
+	public String getPartPath(HttpServletRequest request) {
+		String path = request.getContextPath();
+		String partPath = request.getServerPort() == 80 ? "" : ":" + request.getServerPort();
+		return request.getScheme() + "://" + request.getServerName() + partPath + path + "/";
 	}
 
 	/**

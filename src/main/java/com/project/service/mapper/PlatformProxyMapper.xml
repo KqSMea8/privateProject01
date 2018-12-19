@@ -1,5 +1,78 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.project.service.proxy.PlatformProxy">
-
+	<select id="getUserByOpenId" resultType="com.project.service.entity.User">
+		SELECT
+			a.openid,
+			b.user_id userId,
+			b.name,
+			b.nickname,
+			b.sex,
+			b.birthday,
+			b.qq,
+			b.id_card_number idCardNumber,
+			b.mobile,
+			b.is_safe isSafe,
+			b.is_gp isGp,
+			b.status
+		FROM
+			user_wx a
+		LEFT JOIN USER b ON a.user_id = b.user_id
+		WHERE
+			a.openid = #{openId}
+	</select>
+	
+	<insert id="createUserIdByOpenId" useGeneratedKeys="true" keyProperty="userId">
+		INSERT user (name,nickname,sex)
+		SELECT
+			nickname,
+			nickname,
+			sex
+		FROM
+			user_wx
+		WHERE
+			openid = #{user.openId}
+	</insert>
+	
+	<update id="updateUserWxUserId">
+		UPDATE
+			user_wx
+		SET
+			user_id = #{user.userId}
+		WHERE
+			openid = #{user.openId}
+	</update>
+	
+	<select id="getCityList" resultType="java.util.Map">
+		SELECT
+			city_id cityId,
+			city_name cityName,
+			pinyin_all cityPinyin
+		FROM
+			region_city
+		WHERE
+			1 = 1
+			<if test="type == 1">
+				is_hot = 0
+			</if>
+		ORDER BY
+			city_code
+	</select>
+	
+	<select id="screeTeam" resultType="java.util.Map">
+		SELECT
+			b.team_info_id teamId,
+			b.team_name teamName
+		FROM
+			match_join_team a,
+			team_info b
+		WHERE
+			a.team_info_id = b.team_info_id
+		AND match_info_id = #{matchInfoId}
+		AND status = 1
+	</select>
+	
+	<select id="screeMember" resultType="java.util.Map">
+		<!-- WAIT TODO  -->
+	</select>
 </mapper>

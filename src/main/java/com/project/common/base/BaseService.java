@@ -4,6 +4,10 @@ import java.util.List;
 
 import com.project.common.jqgrid.JQGridPageParams;
 import com.project.common.jqgrid.JQGridResultEntity;
+import com.project.common.sms.QCloudSMSUtil;
+import com.project.common.sms.entity.SMSParameter;
+import com.project.common.sms.enums.SMSSignEnum;
+import com.project.common.sms.enums.SMSTempletEnum;
 import com.project.common.util.DateUtil;
 
 /**
@@ -14,10 +18,8 @@ public class BaseService extends Base {
 	/**
 	 * 计算总页数
 	 * 
-	 * @param totalRows
-	 *            总行数
-	 * @param pageRows
-	 *            单页行数
+	 * @param totalRows 总行数
+	 * @param pageRows  单页行数
 	 * @return
 	 */
 	protected long calcTotalPage(Long totalRows, Long pageRows) {
@@ -69,10 +71,8 @@ public class BaseService extends Base {
 	/**
 	 * 生产Id
 	 * 
-	 * @param tableName
-	 *            需要查询的表名
-	 * @param fieldName
-	 *            需要查询的字段名
+	 * @param tableName 需要查询的表名
+	 * @param fieldName 需要查询的字段名
 	 * @return Integer
 	 * @date 2017年3月15日
 	 */
@@ -84,12 +84,9 @@ public class BaseService extends Base {
 	/**
 	 * 左补位，右对齐
 	 * 
-	 * @param oriStr
-	 *            原字符串
-	 * @param len
-	 *            目标字符串长度
-	 * @param alexin
-	 *            补位字符
+	 * @param oriStr 原字符串
+	 * @param len    目标字符串长度
+	 * @param alexin 补位字符
 	 * @return 目标字符串
 	 */
 	@SuppressWarnings("unused")
@@ -104,4 +101,23 @@ public class BaseService extends Base {
 		str += oriStr;
 		return str;
 	}
+
+	/**
+	 * 发送验证码
+	 * 
+	 * @author chentianjin
+	 * @param mobile
+	 * @param vcode
+	 */
+	protected boolean sendVcode(String mobile, String vcode) {
+		// 发送短信
+		boolean sendResult = false;
+		QCloudSMSUtil qcloudSMSUtil = new QCloudSMSUtil();
+		SMSParameter smsParams = new SMSParameter();
+		smsParams.addValidCode(vcode);
+		// 发送
+		sendResult = qcloudSMSUtil.sendSMS(mobile, SMSSignEnum.互助网, true, null, SMSTempletEnum.公共验证码, smsParams);
+		return sendResult;
+	}
+
 }
