@@ -145,7 +145,7 @@ public class PlatformService extends BaseService {
 		}
 
 		try {
-			return successResult("发送成功", platformProxy.screeTeam(matchInfoId));
+			return successResult("获取成功", platformProxy.screeTeam(matchInfoId));
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorExceptionResult();
@@ -164,7 +164,8 @@ public class PlatformService extends BaseService {
 		}
 
 		try {
-			return successResult("发送成功", platformProxy.screeMember(teamId));
+			// TODO
+			return successResult("获取成功", platformProxy.screeMember(teamId));
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorExceptionResult();

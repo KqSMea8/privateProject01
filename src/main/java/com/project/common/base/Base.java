@@ -8,9 +8,11 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.google.gson.Gson;
 import com.project.common.redis.RedisUtil;
 import com.project.common.util.JsonUtil;
 import com.project.common.util.MD5Utils;
+import com.project.service.entity.User;
 
 import net.sf.json.JSONObject;
 
@@ -23,6 +25,8 @@ public class Base {
 	private static Integer SUCCESS = 200;
 	private static Integer ERROR_PARAM = 400;
 	private static Integer ERROR = 500;
+	public static String PARAM_NAME_PAGE_INDEX = "pageIndex";
+	public static String PARAM_NAME_PAGE_ROWS = "pageRows";
 
 	@Autowired
 	public RedisUtil redisUtil;
@@ -157,5 +161,16 @@ public class Base {
 			obj = new JSONObject();
 		}
 		return obj;
+	}
+
+	/**
+	 * 根据token获取当前用户
+	 */
+	protected User getOperatorByToken(String token) {
+		String operatorStr = redisUtil.get(token);
+		if (StringUtils.isEmpty(operatorStr)) {
+			return null;
+		}
+		return new Gson().fromJson(operatorStr, User.class);
 	}
 }

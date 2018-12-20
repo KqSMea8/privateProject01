@@ -4,17 +4,19 @@ import java.util.List;
 
 import com.project.common.jqgrid.JQGridPageParams;
 import com.project.common.jqgrid.JQGridResultEntity;
+import com.project.common.page.PageForApp;
 import com.project.common.sms.QCloudSMSUtil;
 import com.project.common.sms.entity.SMSParameter;
 import com.project.common.sms.enums.SMSSignEnum;
 import com.project.common.sms.enums.SMSTempletEnum;
 import com.project.common.util.DateUtil;
 
+import net.sf.json.JSONObject;
+
 /**
  * Service基类
  */
 public class BaseService extends Base {
-
 	/**
 	 * 计算总页数
 	 * 
@@ -120,4 +122,18 @@ public class BaseService extends Base {
 		return sendResult;
 	}
 
+	protected PageForApp getPageEntity(JSONObject params) throws Exception {
+		PageForApp pageInfo = new PageForApp();
+		if (params.get(PARAM_NAME_PAGE_INDEX) != null) {
+			if (params.getInt(PARAM_NAME_PAGE_INDEX) <= 0)
+				throw new Exception();
+			pageInfo.setPage(params.getInt(PARAM_NAME_PAGE_INDEX));
+		}
+		if (params.get(PARAM_NAME_PAGE_ROWS) != null) {
+			if (params.getInt(PARAM_NAME_PAGE_ROWS) <= 0)
+				throw new Exception();
+			pageInfo.setRows(params.getInt(PARAM_NAME_PAGE_ROWS));
+		}
+		return pageInfo;
+	}
 }

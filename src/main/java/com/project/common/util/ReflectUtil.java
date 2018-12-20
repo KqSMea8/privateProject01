@@ -19,10 +19,74 @@ public final class ReflectUtil {
 	}
 
 	/**
+	 * 获取obj对象fieldName的Field
+	 * 
+	 * @param obj
+	 * @param fieldName
+	 * @return
+	 */
+	public static Field getFieldByFieldName(Object obj, String fieldName) {
+		for (Class<?> superClass = obj.getClass(); superClass != Object.class; superClass = superClass.getSuperclass()) {
+			try {
+				return superClass.getDeclaredField(fieldName);
+			} catch (NoSuchFieldException e) {
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * 设置obj对象fieldName的属性值
+	 * 
+	 * @param obj
+	 * @param fieldName
+	 * @param value
+	 * @throws SecurityException
+	 * @throws NoSuchFieldException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 */
+	public static void setValueByFieldName(Object obj, String fieldName, Object value) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+		Field field = getFieldByFieldName(obj, fieldName);
+		if (field.isAccessible()) {
+			field.set(obj, value);
+		} else {
+			field.setAccessible(true);
+			field.set(obj, value);
+			field.setAccessible(false);
+		}
+	}
+
+	/**
+	 * 获取obj对象fieldName的属性值
+	 * 
+	 * @param obj
+	 * @param fieldName
+	 * @return
+	 * @throws SecurityException
+	 * @throws NoSuchFieldException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 */
+	public static Object getValueByFieldName(Object obj, String fieldName) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+		Field field = getFieldByFieldName(obj, fieldName);
+		Object value = null;
+		if (field != null) {
+			if (field.isAccessible()) {
+				value = field.get(obj);
+			} else {
+				field.setAccessible(true);
+				value = field.get(obj);
+				field.setAccessible(false);
+			}
+		}
+		return value;
+	}
+
+	/**
 	 * 根据类完整名称获得类对象
 	 * 
-	 * @param className
-	 *            类名称
+	 * @param className 类名称
 	 * @return 类对象
 	 * @throws ClassNotFoundException
 	 */
@@ -40,8 +104,7 @@ public final class ReflectUtil {
 	/**
 	 * 根据对象获得对象的类对象
 	 * 
-	 * @param obj
-	 *            对象
+	 * @param obj 对象
 	 * @return Class对象信息
 	 */
 	public static Class<?> getClassByObject(Object obj) {
@@ -53,10 +116,8 @@ public final class ReflectUtil {
 	/**
 	 * 检查类的成员是否为公共的
 	 * 
-	 * @param clazz
-	 *            类对象
-	 * @param member
-	 *            成员
+	 * @param clazz  类对象
+	 * @param member 成员
 	 * @return boolean是否为公共
 	 */
 	public static boolean isPublic(Class<?> clazz, Member member) {
@@ -66,8 +127,7 @@ public final class ReflectUtil {
 	/**
 	 * 检查类的成员是否为公共的
 	 * 
-	 * @param member
-	 *            成员
+	 * @param member 成员
 	 * @return boolean是否为公共
 	 */
 	public static boolean isPublic(Member member) {
@@ -77,8 +137,7 @@ public final class ReflectUtil {
 	/**
 	 * 获得所有类的属性字段对象
 	 * 
-	 * @param cls
-	 *            类对象
+	 * @param cls 类对象
 	 * @return List<Field> 字段对象集合
 	 */
 	private static List<Object> getFields(Class<?> cls) {
@@ -94,8 +153,7 @@ public final class ReflectUtil {
 	/**
 	 * 获得类中属性名字字符串
 	 * 
-	 * @param cls
-	 *            类对象
+	 * @param cls 类对象
 	 * @return List<String> 名字字符串集合
 	 */
 	public static List<String> getFieldName(Class<?> cls) {
@@ -112,10 +170,8 @@ public final class ReflectUtil {
 	/**
 	 * 判断类中是否包含指定字段
 	 * 
-	 * @param cls
-	 *            类
-	 * @param fieldName
-	 *            字段名称
+	 * @param cls       类
+	 * @param fieldName 字段名称
 	 * @return boolean是否存在
 	 */
 	public static boolean isExistField(Class<?> cls, String fieldName) {
@@ -126,8 +182,7 @@ public final class ReflectUtil {
 	/**
 	 * 获得类的所有方法
 	 * 
-	 * @param cls
-	 *            类对象
+	 * @param cls 类对象
 	 * @return List<Object>
 	 */
 	private static List<Object> getMethods(Class<?> cls) {
@@ -143,8 +198,7 @@ public final class ReflectUtil {
 	/**
 	 * 获得类的所有方法名称集合
 	 * 
-	 * @param cls
-	 *            类对象
+	 * @param cls 类对象
 	 * @return List<String>
 	 */
 	public static List<String> getMethodName(Class<?> cls) {
@@ -161,10 +215,8 @@ public final class ReflectUtil {
 	/**
 	 * 判断类中是否包含指定方法
 	 * 
-	 * @param cls
-	 *            类
-	 * @param mname
-	 *            方法名称
+	 * @param cls   类
+	 * @param mname 方法名称
 	 * @return boolean是否存在
 	 */
 	public static boolean isExistMethod(Class<?> cls, String mname) {
@@ -184,12 +236,9 @@ public final class ReflectUtil {
 	/**
 	 * 根据类的方法名称和方法参数类型获得方法对象
 	 * 
-	 * @param cls
-	 *            类对象
-	 * @param methodName
-	 *            方法名字
-	 * @param paramType
-	 *            方法参数类型
+	 * @param cls        类对象
+	 * @param methodName 方法名字
+	 * @param paramType  方法参数类型
 	 * @return Method
 	 */
 	public static Method getMethod(Class<?> cls, String methodName, Class<?>[] paramType) {
@@ -207,14 +256,10 @@ public final class ReflectUtil {
 	/**
 	 * 反射执行指定的方法
 	 * 
-	 * @param obj
-	 *            对象
-	 * @param methodName
-	 *            方法名
-	 * @param paramValue
-	 *            参数值
-	 * @param paramType
-	 *            方法参数类型
+	 * @param obj        对象
+	 * @param methodName 方法名
+	 * @param paramValue 参数值
+	 * @param paramType  方法参数类型
 	 * @return 方法执行后返回结果
 	 */
 	public static Object invokeMethod(Object obj, String methodName, Object[] paramValue, Class<?>[] paramType) {

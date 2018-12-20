@@ -18,4 +18,11 @@
 		<!-- 设置超时时间，它决定驱动等待一个数据库响应的时间。 -->
 		<setting name="defaultStatementTimeout" value="25000" />
 	</settings>
+	<plugins>
+		<!-- 分页插件 -->
+		<plugin interceptor="com.project.common.page.PaginationForTotalDataInterceptor">
+			<property name="dialect" value="mysql"/>
+		</plugin>
+		<plugin interceptor="com.project.common.page.PaginationForPageContentInterceptor" />
+	</plugins>
 </configuration>

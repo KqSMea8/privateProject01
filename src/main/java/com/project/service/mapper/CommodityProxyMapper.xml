@@ -1,5 +1,57 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.project.service.proxy.CommodityProxy">
-
+	<select id="typeList" resultType="java.util.Map">
+		SELECT
+			commodity_type_id typeId,
+			commodity_type_name typeName
+		FROM
+			commodity_type
+		WHERE
+			del_flag = 1
+		AND status = 1
+		ORDER BY
+			sort
+	</select>
+	
+	<select id="listOfType" resultType="java.util.Map">
+		SELECT
+			commodity_info_id commodityId,
+			commodity_title commodityTitle,
+			commodity_synopsis commoditySynopsis,
+			commodity_price commodityProce,
+			commodity_cover_path coverPath
+		FROM
+			commodity_info
+		WHERE
+			commodity_type_id = #{typeId}
+		AND commodity_title LIKE CONCAT('%', #{searchKey}, '%')
+	</select>
+	
+	<select id="info" resultType="java.util.Map">
+		SELECT
+			commodity_info_id commodityId,
+			commodity_title commodityTitle,
+			commodity_synopsis commoditySynopsis,
+			commodity_price commodityProce,
+			rotation_chart_paths rotationChartPaths,
+			commodity_content commodityContent,
+			(
+				SELECT
+					IFNULL(SUM(total), 0)
+				FROM
+					commodity_order
+				WHERE
+					commodity_info_id = commodity_info.commodity_info_id
+				AND STATUS != 1
+			) totalBuy
+		FROM
+			commodity_info
+		WHERE
+			commodity_info_id = 1
+	</select>
+	
+	<insert id="buy">
+		TODO
+	</insert>
 </mapper>
