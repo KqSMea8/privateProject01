@@ -166,7 +166,7 @@ public class Base {
 	/**
 	 * 根据token获取当前用户
 	 */
-	protected User getOperatorByToken(String token) {
+	protected User getUserByToken(String token) {
 		String operatorStr = redisUtil.get(token);
 		if (StringUtils.isEmpty(operatorStr)) {
 			return null;

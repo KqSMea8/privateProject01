@@ -18,6 +18,8 @@ public interface CommodityProxy {
 
 	public Map<String, Object> info(@Param("commodityId") Integer commodityId);
 
-	public Integer buy(@Param("commodityId") Integer commodityId, @Param("receiveId") Integer receiveId, @Param("total") Integer total, @Param("user") User user);
+	public Integer buy(@Param("commodityId") Integer commodityId, @Param("receiveId") Integer receiveId, @Param("total") Integer total, @Param("payType") Integer payType, @Param("user") User user);
+
+	public Integer update(@Param("orderId") Integer orderId, @Param("status") Integer status);
 
 }

@@ -26,6 +26,8 @@
 		WHERE
 			commodity_type_id = #{typeId}
 		AND commodity_title LIKE CONCAT('%', #{searchKey}, '%')
+		AND del_flag = 1
+		AND status = 1
 	</select>
 	
 	<select id="info" resultType="java.util.Map">
@@ -48,10 +50,67 @@
 		FROM
 			commodity_info
 		WHERE
-			commodity_info_id = 1
+			commodity_info_id = #{commodityId}
+		AND del_flag = 1
+		AND status = 1
 	</select>
 	
-	<insert id="buy">
-		TODO
+	<insert id="buy" useGeneratedKeys="true" keyProperty="user.tempId">
+		INSERT commodity_order (
+			commodity_info_id,
+			order_number,
+			total,
+			one_price,
+			order_price,
+			pay_type,
+			receive_user_name,
+			receive_user_tel,
+			receive_address,
+			user_id
+		)
+		SELECT 
+			a.*,b.*,#{user.userId}
+		FROM 
+			(
+				SELECT
+					a.commodity_info_id,
+					IFNULL((
+						SELECT
+							CONCAT(DATE_FORMAT(NOW(),'%Y%m%d'),LPAD(SUBSTR(MAX(order_number) FROM 9) +1,5,'0'))
+						FROM
+							commodity_order
+						WHERE
+							commodity_info_id = a.commodity_info_id
+						AND DATE(create_time) = DATE(NOW())
+					),CONCAT(DATE_FORMAT(NOW(),'%Y%m%d'),LPAD(1,5,'0'))),
+					#{total} total,
+					a.commodity_price,
+					(a.commodity_price * #{total}) order_price,
+					#{payType} payType
+				FROM
+					commodity_info a
+				WHERE
+					a.commodity_info_id = #{commodityId}
+			) a
+			LEFT JOIN (
+				SELECT
+					receive_user_name,
+					receive_user_tel,
+					CONCAT(provice_name,city_name,district_name,receive_address)
+				FROM
+					user_receive_info
+				WHERE
+					user_receive_info_id = #{receiveId}
+				AND user_id = #{user.userId}
+			) b ON 1 = 1
 	</insert>
+	
+	<update id="update">
+		UPDATE 
+			commodity_order
+		SET 
+			status = #{status}
+		WHERE
+			commodity_order_id = #{orderId}
+	</update>
 </mapper>

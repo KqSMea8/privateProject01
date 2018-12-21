@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.service.proxy.PlayerKillingProxy">
+	<select id="list" resultType="java.util.Map">
+		SELECT
+			a.engagement_info_id pkInfoId,
+			a.engagement_title title,
+			a.start_time pktime,
+			CONCAT(a.city_name,'-',a.district_name) region,
+			a.address,
+			a.cost_plan costContent,
+			CASE WHEN NOW()> a.sign_up_end_time AND a.status = 0 THEN 2 ELSE a.status END pkStatus,
+			CASE WHEN NOW()> a.sign_up_end_time AND a.status = 0 THEN '已过期' WHEN a.status = 0 THEN '待约战' ELSE '约战成功' END pkStatusStr,
+			(SELECT title FROM class WHERE id = a.engagement_type) pkMarchType,
+			a.team_id teamId,
+			b.team_name teamName,
+			b.team_logo logpPath,
+			a.create_time teamTime
+		FROM
+			engagement_info a,
+			team_info b
+		WHERE
+			a.team_id = b.team_info_id
+		<if test="paramEntity.cityId != null">
+			AND a.city_id = #{paramEntity.cityId}
+		</if>
+		<if test="paramEntity.districtId != null">
+			AND a.district_id = #{paramEntity.districtId}
+		</if>
+		<if test="paramEntity.pkMarchType != null">
+			AND a.engagement_type = #{paramEntity.pkMarchType}
+		</if>
+		<if test="paramEntity.pkStatus != null">
+			<if test="paramEntity.pkStatus == 2">
+				AND NOW()> a.sign_up_end_time AND a.status = 0
+			</if>
+			<if test="paramEntity.pkStatus != 2">
+				AND a.engagement_type = #{paramEntity.pkStatus}
+			</if>
+		</if>
+		<if test="paramEntity.searchKey != null">
+			AND (a.engagement_title LIKE CONCAT('%',#{paramEntity.searchKey},'%') OR b.team_name LIKE CONCAT('%',#{paramEntity.searchKey},'%'))
+		</if>
+		<if test='paramEntity.startDate != null and paramEntity.startDate != ""'>
+			AND a.create_time &gt;= #{paramEntity.startDate}
+		</if>
+		<if test='paramEntity.endDate != null and paramEntity.endDate != ""'>
+			AND a.create_time &lt;= #{paramEntity.endDate}
+		</if>
+	</select>
+	
+	<select id="info" resultType="java.util.Map">
+		SELECT
+			a.engagement_info_id pkInfoId,
+			a.engagement_title title,
+			a.start_time pktime,
+			CONCAT(a.city_name,'-',a.district_name) region,
+			a.address,
+			a.cost_plan costContent,
+			CASE WHEN NOW()> a.sign_up_end_time AND a.status = 0 THEN 2 ELSE a.status END pkStatus,
+			CASE WHEN NOW()> a.sign_up_end_time AND a.status = 0 THEN '已过期' WHEN a.status = 0 THEN '待约战' ELSE '约战成功' END pkStatusStr,
+			(SELECT title FROM class WHERE id = a.engagement_type) pkMarchType,
+			a.team_id teamId,
+			b.team_name teamName,
+			b.team_logo logpPath,
+			a.create_time teamTime,
+			d.team_info_id confirmTeamId,
+			d.team_name confirmTeamName,
+			d.team_logo confirmTeamLogoPath,
+			a.user_id createUserId
+		FROM
+			engagement_info a 
+			LEFT JOIN engagement_team_apply c ON a.engagement_info_id = c.engagement_info_id AND audit_status = 1 
+			LEFT JOIN team_info d ON c.team_id = d.team_info_id,
+			team_info b
+		WHERE
+			a.team_id = b.team_info_id
+		AND a.engagement_info_id = #{pkInfoId}
+	</select>
+	
+	<select id="getApplyTeams" resultType="java.util.Map">
+		SELECT
+			c.team_info_id applyTeamId,
+			c.team_name applyTeamName,
+			c.team_logo applyTeamLogoPath
+		FROM
+			engagement_info a,
+			engagement_team_apply b,
+			team_info c
+		WHERE
+			a.engagement_info_id = b.engagement_info_id
+		AND b.team_id = c.team_info_id
+		AND audit_status = 0
+		AND a.engagement_info_id = #{pkInfoId}
+	</select>
+	
+	<insert id="create">
+		INSERT INTO engagement_info (
+			engagement_title,
+			provice_id,
+			provice_name,
+			city_id,
+			city_name,
+			district_id,
+			district_name,
+			address,
+			cost_plan,
+			engagement_type,
+			team_id,
+			team_tel,
+			team_uniform_color,
+			team_upper_limit,
+			start_time,
+			duration,
+			engagement_synopsis,
+			sign_up_end_time,
+			user_id
+		) SELECT
+			#{paramEntity.title},
+			x.province_id,
+			x.province_name,
+			x.city_id,
+			x.city_name,
+			y.district_id,
+			y.district_name,
+			#{paramEntity.address},
+			#{paramEntity.costContent},
+			#{paramEntity.pkMarchType},
+			z.team_info_id,
+			z.mobile,
+			#{paramEntity.teamJerseyColor},
+			#{paramEntity.teamMemberTotal},
+			#{paramEntity.pkStartTime},
+			#{paramEntity.pkDuration},
+			#{paramEntity.briefing},
+			#{paramEntity.pkSignUpEndTime},
+			#{user.userId}
+		FROM
+			(
+				SELECT a.province_id, a.province_name, b.city_id, b.city_name
+				FROM region_province a, region_city b
+				WHERE a.province_id = b.province_id AND b.city_id = #{paramEntity.cityId}
+			) x
+			LEFT JOIN (
+				SELECT district_id, district_name FROM region_district WHERE district_id = #{paramEntity.districtId}
+			) y ON 1 = 1
+			LEFT JOIN (
+				SELECT team_info_id,mobile FROM team_info WHERE team_info_id = 1
+			) z ON 1 = 1
+	</insert>
+	
+	<update id="edit">
+		UPDATE 
+			engagement_info a
+			LEFT JOIN (
+				SELECT a.province_id, a.province_name, b.city_id, b.city_name
+				FROM region_province a, region_city b
+				WHERE a.province_id = b.province_id AND b.city_id = #{paramEntity.cityId}
+			) x ON 1 = 1
+			LEFT JOIN (
+				SELECT district_id, district_name FROM region_district WHERE district_id = #{paramEntity.districtId}
+			) y ON 1 = 1
+			LEFT JOIN (
+				SELECT team_info_id,mobile FROM team_info WHERE team_info_id = 1
+			) z ON 1 = 1
+		SET 
+			a.engagement_title = #{paramEntity.title},
+			a.provice_id = x.province_id,
+			a.provice_name = x.province_name,
+			a.city_id = x.city_id, 
+			a.city_name = x.city_name,
+			a.district_id = y.district_id,
+			a.district_name = y.district_name,
+			a.address = #{paramEntity.address},
+			a.cost_plan = #{paramEntity.costContent},
+			a.engagement_type = #{paramEntity.pkMarchType},
+			a.team_id = z.team_info_id,
+			a.team_tel = z.mobile,
+			a.team_uniform_color = #{paramEntity.teamJerseyColor},
+			a.team_upper_limit = #{paramEntity.teamMemberTotal},
+			a.start_time = #{paramEntity.pkStartTime},
+			a.duration = #{paramEntity.pkDuration},
+			a.engagement_synopsis = #{paramEntity.briefing},
+			a.sign_up_end_time = #{paramEntity.pkSignUpEndTime}
+		WHERE a.engagement_info_id = #{paramEntity.pkInfoId}
+	</update>
+	
+	<update id="delete">
+		UPDATE 
+			engagement_info
+		SET 
+			del_flag = 0
+		WHERE
+			engagement_info_id = #{pkInfoId}
+		AND user_id = #{userId}
+	</update>
+	
+	<update id="confirm">
+		UPDATE 
+			engagement_info a,engagement_team_apply b
+		SET 
+			b.audit_status = 0
+		WHERE
+			a.engagement_info_id = b.engagement_info_id
+		AND a.engagement_info_id = #{pkInfoId}
+		AND b.team_id = #{applyTeamId}
+		AND a.user_id = #{userId}
+	</update>
+	
+	<insert id="apply">
+		INSERT INTO engagement_team_apply (
+			engagement_info_id,
+			team_id,
+			team_uniform_color,
+			team_upper_limit,
+			contacts,
+			contacts_tel,
+			briefing,
+			user_id
+		)
+		VALUES
+			(
+				#{paramEntity.pkInfoId},
+				#{paramEntity.teamId},
+				#{paramEntity.teamJerseyColor},
+				#{paramEntity.teamMemberTotal},
+				#{paramEntity.contacts},
+				#{paramEntity.contactsTel},
+				#{paramEntity.briefing},
+				#{user.userId}
+			)
+	</insert>
+</mapper>

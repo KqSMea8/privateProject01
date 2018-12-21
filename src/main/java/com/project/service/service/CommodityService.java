@@ -1,5 +1,8 @@
 package com.project.service.service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
@@ -75,22 +78,51 @@ public class CommodityService extends BaseService {
 		Integer commodityId;
 		Integer receiveId;
 		Integer total;
+		Integer payType;
 		try {
 			commodityId = params.getInt("commodityId");
 			receiveId = params.getInt("receiveId");
 			total = params.getInt("total");
+			payType = params.getInt("payType");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorParamsResult();
 		}
 		try {
+			Map<String, Object> result = new HashMap<String, Object>();
 			TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
-			if (commodityProxy.buy(commodityId, receiveId, total, user).intValue() == 1) {
+			if (commodityProxy.buy(commodityId, receiveId, total, payType, user).intValue() == 1) {
 				transactionManager.commit(status);
-				return successResult("创建订单成功");
+
+				result.put("orderId", user.getTempId());
+				return successResult("创建订单成功", result);
 			} else {
 				transactionManager.rollback(status);
 				return errorResult("创建订单失败!");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult update(User user, JSONObject params) {
+		Integer orderId;
+		Integer status;
+		try {
+			orderId = params.getInt("orderId");
+			status = params.getInt("status");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+		try {
+			Map<String, Object> result = new HashMap<String, Object>();
+			if (commodityProxy.update(orderId, status).intValue() == 1) {
+				result.put("orderId", user.getTempId());
+				return successResult("修改成功", result);
+			} else {
+				return errorResult("修改失败!");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

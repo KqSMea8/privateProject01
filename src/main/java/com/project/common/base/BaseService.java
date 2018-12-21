@@ -2,6 +2,9 @@ package com.project.common.base;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.common.jqgrid.JQGridPageParams;
 import com.project.common.jqgrid.JQGridResultEntity;
 import com.project.common.page.PageForApp;
@@ -68,6 +71,26 @@ public class BaseService extends Base {
 		result.setTotalRecords(totalRecords);
 
 		return result;
+	}
+
+	/**
+	 * 将传入的参数解析成实体
+	 * 
+	 * @param json
+	 * @param view
+	 * @param entity
+	 * @return
+	 */
+	protected <R, T> T json2Entity(String json, Class<T> entity) {
+		try {
+			if (StringUtils.isEmpty(json)) {
+				return entity.newInstance();
+			}
+			return new ObjectMapper().reader().forType(entity).readValue(json);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	/**

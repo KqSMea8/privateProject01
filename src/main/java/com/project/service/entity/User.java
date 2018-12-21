@@ -30,6 +30,8 @@ public class User {
 	private String intr;
 	private Byte status;
 
+	private Integer tempId;
+
 	public String getOpenId() {
 		return openid;
 	}
@@ -244,5 +246,13 @@ public class User {
 
 	public void setStatus(Byte status) {
 		this.status = status;
+	}
+
+	public Integer getTempId() {
+		return tempId;
+	}
+
+	public void setTempId(Integer tempId) {
+		this.tempId = tempId;
 	}
 }

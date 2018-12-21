@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.service.proxy.InformationProxy">
+	<select id="typeList" resultType="java.util.Map">
+		SELECT
+			information_type_id typeId,
+			information_type_name typeName
+		FROM
+			information_type
+		WHERE
+			del_flag = 1
+		AND status = 1
+		ORDER BY
+			sort
+	</select>
+	
+	<select id="listOfType" resultType="java.util.Map">
+		SELECT
+			information_info_id informationId,
+			information_title informationTitle,
+			DATE_FORMAT(create_time, '%Y-%m-%d %T') createTime,
+			total_browse createTime,
+			information_cover_path coverPath
+		FROM
+			information_info
+		WHERE
+			information_type_id = #{typeId}
+		AND del_flag = 1
+		AND status = 1
+	</select>
+	
+	<select id="info" resultType="java.util.Map">
+		SELECT
+			information_info_id informationId,
+			information_title informationTitle,
+			DATE_FORMAT(create_time, '%Y-%m-%d %T') createTime,
+			total_browse createTime,
+			information_content content
+		FROM
+			information_info
+		WHERE
+			information_type_id = #{informationId}
+		AND del_flag = 1
+		AND status = 1
+	</select>
+	
+	<update id="addBrowe">
+		UPDATE 
+			information_info
+		SET 
+			total_browse = total_browse + 1
+		WHERE
+			information_info_id = #{informationId}
+	</update>
+	
+	<select id="commentlist" resultType="java.util.Map">
+		SELECT
+			b.user_id userId,
+			b.nickname userName,
+			(SELECT headimgurl FROM user_wx WHERE user_id = b.user_id) headImgUrl,
+			a.comment_content commentContent,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') createTime
+		FROM
+			information_comment a,
+			user b
+		WHERE 
+			a.user_id = b.user_id
+		and a.information_info_id = #{informationId}
+	</select>
+	
+	<insert id="comment">
+		INSERT INTO information_comment(
+			information_info_id,
+			comment_content,
+			user_id
+		)
+		VALUES(
+			#{informationId},
+			#{commentContent},
+			#{user.userId}
+		)
+	</insert>
+</mapper>
