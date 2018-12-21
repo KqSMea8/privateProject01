@@ -97,8 +97,8 @@
 	<insert id="create">
 		INSERT INTO engagement_info (
 			engagement_title,
-			provice_id,
-			provice_name,
+			province_id,
+			province_name,
 			city_id,
 			city_name,
 			district_id,
@@ -165,8 +165,8 @@
 			) z ON 1 = 1
 		SET 
 			a.engagement_title = #{paramEntity.title},
-			a.provice_id = x.province_id,
-			a.provice_name = x.province_name,
+			a.province_id = x.province_id,
+			a.province_name = x.province_name,
 			a.city_id = x.city_id, 
 			a.city_name = x.city_name,
 			a.district_id = y.district_id,

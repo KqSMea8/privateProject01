@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.project.service.proxy.MineProxy">
+	<!-- ==============================================用户相关============================================================= -->
 	<select id="getCenterInfo" resultType="java.util.Map">
 		SELECT
 			a.user_id userId,
@@ -15,5 +16,138 @@
 		WHERE
 			a.user_id = b.user_id
 		AND a.user_id = #{userId}
+	</select>
+	
+	<!-- ==============================================收货地址相关============================================================= -->
+	
+	<select id="receiveList" resultType="java.util.Map">
+		SELECT
+			user_receive_info_id receiveId,
+			receive_user_name receiveName,
+			receive_user_tel receiveMobile,
+			receive_address address,
+			is_def isDeff,
+			CONCAT(IFNULL(province_name,''),IFNULL(city_name,''),IFNULL(district_name,''))allAddress
+		FROM
+			user_receive_info
+		WHERE
+			user_id = #{userId}
+	</select>
+	
+	<insert id="createReceive">
+		INSERT INTO user_receive_info (
+			receive_user_name,
+			receive_user_tel,
+			receive_address,
+			is_def,
+			user_id,
+			province_id,
+			province_name,
+			city_id,
+			city_name,
+			district_id,
+			district_name
+		)
+		VALUES
+			(
+				#{receiveName},
+				#{receiveMobile},
+				#{address},
+				#{isDeff},
+				#{user.userId},
+				#{provinceId},
+				(SELECT province_name FROM region_province WHERE province_id = #{provinceId}),
+				#{cityId},
+				(SELECT city_name FROM region_city WHERE city_id = #{cityId}),
+				#{districtId},
+				(SELECT district_name FROM region_district WHERE district_id = #{districtId})
+			)
+	</insert>
+	
+	<update id="editReceive">
+		UPDATE user_receive_info 
+			receive_user_name = #{receiveName},
+			receive_user_tel = #{receiveMobile},
+			receive_address = #{address},
+			is_def = #{isDeff},
+			province_id = #{provinceId},
+			province_name = (SELECT province_name FROM region_province WHERE province_id = #{provinceId}),
+			city_id = #{cityId},
+			city_name = (SELECT city_name FROM region_city WHERE city_id = #{cityId}),
+			district_id = #{districtId},
+			district_name = (SELECT district_name FROM region_district WHERE district_id = #{districtId})
+		WHERE
+			user_receive_info_id = #{receiveId}
+	</update>
+	
+	<!-- ==============================================球队相关============================================================= -->
+	
+	<select id="teamList" resultType="java.util.Map">
+		SELECT
+			a.team_info_id teamId,
+			a.team_name teamName,
+			a.team_logo logoPath,
+			CONCAT(IFNULL(a.city_name,''),IFNULL(a.district_name,'')) region
+		FROM
+			team_info a,
+			team_member b
+		WHERE
+			a.team_info_id = b.team_info_id
+		AND b.user_id = #{userId}
+	</select>
+	
+	<select id="teamInfo" resultType="java.util.Map">
+		SELECT
+			team_info_id teamId,
+			pics,
+			team_logo teamLogo,
+			team_name teamName,
+			establish,
+			linkman contacts,
+			mobile contactsTel,
+			user_id userId
+		FROM
+			team_info
+		WHERE
+			team_info_id = #{teamId}
+	</select>
+	
+	<select id="getTeamCount" resultType="java.util.Map">
+		SELECT
+			COUNT(1),
+			IFNULL(SUM(show_num),0) totalGame,
+			IFNULL(SUM(win_num),0) totalWin,
+			IFNULL(SUM(lose_num),0) totalLose,
+			IFNULL(SUM(draw_num),0) totalDraw
+		FROM
+			match_join_team
+		WHERE
+			team_info_id = #{teamId}
+		AND status = 1
+	</select>
+	
+	<select id="matchScheduleInfo" resultType="java.util.Map">
+		SELECT
+			a.schedule_start_time,
+			b.team_info_id teamid,
+			b.team_name teamName,
+			b.team_logo teamLogo,
+			(SELECT CONCAT(IFNULL( city_name,''),IFNULL(district_name,''),IFNULL(address,'')) FROM match_info WHERE match_info_id = a.match_info_id) address,
+			0 signUpTotal,
+			0 signUpStatus
+		FROM
+			match_schedule a,
+			team_info b
+		WHERE
+			a.status = 1
+		AND CASE 
+				WHEN a.team_info_id1 = #{teamId} THEN a.team_info_id2 = b.team_info_id
+				WHEN a.team_info_id2 = #{teamId} THEN a.team_info_id1 = b.team_info_id
+			END
+		AND (a.team_info_id1 = #{teamId} OR a.team_info_id2 = #{teamId})
+		AND a.schedule_start_time > NOW()
+		ORDER BY
+			a.schedule_start_time
+		LIMIT 1
 	</select>
 </mapper>

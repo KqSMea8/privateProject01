@@ -7,7 +7,8 @@ import com.project.common.util.validate.AbstractParameter;
  * 约战申请请求参数实体
  */
 public class PlayerKillingApplyReqEntity extends AbstractParameter {
-	private static final long serialVersionUID = -6766968319729552767L;
+
+	private static final long serialVersionUID = -2251591191013154334L;
 
 	@ValidateParam(tip = "约战ID不得为空!")
 	Integer pkInfoId;

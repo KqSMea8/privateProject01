@@ -8,7 +8,8 @@ import com.project.common.util.validate.RegexConstant;
  * 约战信息保存请求参数实体
  */
 public class PlayerKillingSaveReqEntity extends AbstractParameter {
-	private static final long serialVersionUID = -6766968319729552767L;
+
+	private static final long serialVersionUID = -7390289097324013640L;
 
 	@ValidateParam(allowEmpty = true)
 	Integer pkInfoId;

@@ -96,7 +96,7 @@
 				SELECT
 					receive_user_name,
 					receive_user_tel,
-					CONCAT(provice_name,city_name,district_name,receive_address)
+					CONCAT(province_name,city_name,district_name,receive_address)
 				FROM
 					user_receive_info
 				WHERE

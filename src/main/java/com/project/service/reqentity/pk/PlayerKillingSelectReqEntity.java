@@ -8,7 +8,8 @@ import com.project.common.util.validate.RegexConstant;
  * 约战列表请求参数实体
  */
 public class PlayerKillingSelectReqEntity extends AbstractParameter {
-	private static final long serialVersionUID = -6766968319729552767L;
+
+	private static final long serialVersionUID = 5971449585124264343L;
 
 	@ValidateParam(allowEmpty = true)
 	Integer cityId;// 第一层筛选条件
