@@ -62,4 +62,51 @@ public class CommodityController extends BaseController {
 	public BaseResult update(@CheckParam() String token, String params) {
 		return commodityService.update(getUserByToken(token), getJSONObjectParams(params));
 	}
+
+	// =============================================钻石相关=============================================================
+
+	/**
+	 * 钻石充值
+	 */
+	@CheckToken
+	@RequestMapping(value = "/diamonds/recharge", method = RequestMethod.POST)
+	public BaseResult diamondsRecharge(String token, String params) {
+		return commodityService.diamondsRecharge(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/**
+	 * 钻石商品列表
+	 */
+	@CheckToken
+	@RequestMapping(value = "/diamonds/list", method = RequestMethod.POST)
+	public BaseResult diamondsCommodityList(String token, String params) {
+		return commodityService.diamondsCommodityList(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/**
+	 * 钻石商品详情
+	 */
+	@CheckToken
+	@RequestMapping(value = "/diamonds/info", method = RequestMethod.POST)
+	public BaseResult diamondsCommodityInfo(String token, String params) {
+		return commodityService.diamondsCommodityInfo(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/**
+	 * 钻石商品确认兑换
+	 */
+	@CheckToken
+	@RequestMapping(value = "/diamonds/buy", method = RequestMethod.POST)
+	public BaseResult diamondsCommodityBuy(String token, String params) {
+		return commodityService.diamondsCommodityBuy(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/**
+	 * 钻石商品订单列表
+	 */
+	@CheckToken
+	@RequestMapping(value = "/diamonds/order", method = RequestMethod.POST)
+	public BaseResult diamondsCommodityOrder(String token, String params) {
+		return commodityService.diamondsCommodityOrder(getUserByToken(token), getJSONObjectParams(params));
+	}
 }

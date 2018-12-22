@@ -22,4 +22,16 @@ public interface CommodityProxy {
 
 	public Integer update(@Param("orderId") Integer orderId, @Param("status") Integer status);
 
+	// =============================================钻石相关=============================================================
+
+	public Integer diamondsRecharge(@Param("rechargeTotal") Integer rechargeTotal, @Param("userId") Integer userId);
+
+	public Map<String, Object> getDiamonds(@Param("userId") Integer userId);
+
+	public List<Map<String, Object>> diamondsCommodityList(@Param("page") PageForApp page, @Param("searchKey") String searchKey);
+
+	public Map<String, Object> diamondsCommodityInfo(@Param("commodityId")Integer commodityId);
+
+	public List<Map<String, Object>> diamondsCommodityList(@Param("page")PageForApp page, @Param("userId")Integer userId);
+
 }

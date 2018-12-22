@@ -113,4 +113,60 @@
 		WHERE
 			commodity_order_id = #{orderId}
 	</update>
+	
+	<!-- ==============================================钻石相关============================================================= -->
+	
+	<update id="diamondsRecharge" >
+		UPDATE 
+			user
+		SET 
+			diamonds = diamonds + 1
+		WHERE
+			user_id = #{userId}
+	</update>
+	
+	<select id="getDiamonds" resultType="java.util.Map">
+		SELECT
+			diamonds
+		FROM
+			user
+		WHERE
+			user_id = 1
+	</select>
+	
+	<select id="diamondsCommodityList" resultType="java.util.Map">
+		SELECT
+			commodity_info_id commodityId,
+			commodity_title commodityTitle,
+			commodity_synopsis commoditySynopsis,
+			commodity_price commodityProce,
+			commodity_cover_path coverPath
+		FROM
+			commodity_info
+		WHERE
+			commodity_type_id = 0
+		AND commodity_title LIKE CONCAT('%', #{searchKey}, '%')
+		AND del_flag = 1
+		AND status = 1
+	</select>
+	
+	<select id="diamondsCommodityList" resultType="java.util.Map">
+		SELECT
+			a.commodity_order_id orderId,
+			a.order_number orderCode,
+			b.commodity_title commodityName,
+			b.commodity_cover_path commodityCoverPath,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') createTime,
+			a.one_price onePrice,
+			a.total,
+			a.order_price orderPrice,
+			a.status orderStatus,
+			CASE a.status WHEN 1 THEN '未支付' WHEN 2 THEN '未收货' WHEN 3 THEN '已完成' END orderStatusStr
+		FROM
+			commodity_order a,
+			commodity_info b
+		WHERE
+			a.commodity_info_id = b.commodity_info_id
+		AND a.user_id = #{userId}
+	</select>
 </mapper>

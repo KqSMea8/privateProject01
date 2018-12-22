@@ -130,4 +130,111 @@ public class CommodityService extends BaseService {
 		}
 	}
 
+	// =============================================钻石相关=============================================================
+
+	public BaseResult diamondsRecharge(User user, JSONObject params) {
+		Integer rechargeTotal;
+		try {
+			rechargeTotal = params.getInt("rechargeTotal");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+		try {
+			Map<String, Object> result = new HashMap<String, Object>();
+			if (commodityProxy.diamondsRecharge(rechargeTotal, user.getUserId()).intValue() == 1) {
+				return successResult("充值成功", result);
+			} else {
+				return errorResult("充值失败!");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult diamondsCommodityList(User user, JSONObject params) {
+		String searchKey;
+		PageForApp page = null;
+		try {
+			searchKey = params.getString("searchKey");
+			page = getPageEntity(params);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+		try {
+			Map<String, Object> result = commodityProxy.getDiamonds(user.getUserId());
+			result.put("commodityList", commodityProxy.diamondsCommodityList(page, searchKey));
+			return successResult("获取成功", result);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult diamondsCommodityInfo(User user, JSONObject params) {
+		Integer commodityId;
+		try {
+			commodityId = params.getInt("commodityId");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+		try {
+			Map<String, Object> result = commodityProxy.info(commodityId);
+			return successResult("获取成功", result);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult diamondsCommodityBuy(User user, JSONObject params) {
+		Integer commodityId, commodityPrice, receiveId;
+		try {
+			commodityId = params.getInt("commodityId");
+			receiveId = params.getInt("receiveId");
+			commodityPrice = params.getInt("commodityPrice");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+		TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+		try {
+			boolean result = false;
+			result = commodityProxy.buy(commodityId, receiveId, 1, 0, user).intValue() == 1;
+			result = result && commodityProxy.diamondsRecharge(commodityPrice, user.getUserId()).intValue() == 1;
+
+			if (result) {
+				transactionManager.commit(status);
+				return successResult("购买成功");
+			} else {
+				transactionManager.rollback(status);
+				return errorResult("购买失败");
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			transactionManager.rollback(status);
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult diamondsCommodityOrder(User user, JSONObject params) {
+		PageForApp page = null;
+		try {
+			page = getPageEntity(params);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+		try {
+			return successResult("获取成功", commodityProxy.diamondsCommodityList(page, user.getUserId()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
 }
