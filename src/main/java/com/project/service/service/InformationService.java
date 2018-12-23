@@ -45,7 +45,6 @@ public class InformationService extends BaseService {
 			e.printStackTrace();
 			return errorExceptionResult();
 		}
-
 	}
 
 	public BaseResult info(JSONObject params) {

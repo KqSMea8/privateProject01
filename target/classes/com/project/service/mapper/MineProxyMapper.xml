@@ -534,7 +534,7 @@
 			b.match_name matchName,
 			b.logo_img logoPath,
 			CONCAT(IFNULL(b.city_name,''),'-',IFNULL(b.district_name,'')) region,
-			(SELECT title FROM class WHERE id = b.match_type) pkMarchType,
+			(SELECT title FROM class WHERE id = b.match_type) matchType,
 			CONCAT(b.start_date,'~',b.end_date) matchTime,
 			b.status,
 			CASE b.status WHEN 1 THEN '报名中' WHEN 2 THEN '待开赛' WHEN 3 THEN '进行中' END statusStr
@@ -562,6 +562,7 @@
 		AND a.user_id = #{userId}
 		AND a.type = 2
 		AND a.status = 1
+		AND b.del_flag = 1
 	</select>
 	
 	<select id="followMemberlist" resultType="java.util.Map">

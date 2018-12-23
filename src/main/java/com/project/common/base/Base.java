@@ -1,5 +1,8 @@
 package com.project.common.base;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.Random;
 import java.util.UUID;
 
@@ -10,8 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.gson.Gson;
 import com.project.common.redis.RedisUtil;
+import com.project.common.util.ClassPathUtil;
 import com.project.common.util.JsonUtil;
 import com.project.common.util.MD5Utils;
+import com.project.common.util.ProFileReader;
 import com.project.service.entity.User;
 
 import net.sf.json.JSONObject;
@@ -172,5 +177,17 @@ public class Base {
 			return null;
 		}
 		return new Gson().fromJson(operatorStr, User.class);
+	}
+
+	public String getSystemParamsByName(String Name) {
+		File file = new File(ClassPathUtil.getPath() + "resource/system.properties");
+		ProFileReader uploadPropFile;
+		try {
+			uploadPropFile = new ProFileReader(new FileInputStream(file));
+			return uploadPropFile.getParamValue("IS_ENCRYPTION");
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return "";
+		}
 	}
 }
