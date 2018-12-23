@@ -18,6 +18,82 @@
 		AND a.user_id = #{userId}
 	</select>
 	
+	<select id="userInfo" resultType="java.util.Map">
+		SELECT
+			a.user_id userId,
+			a.name userName,
+			b.headimgurl headImgUrl,
+			a.height height,
+			a.weight weight,
+			CASE a.sex WHEN 0 THEN '保密' WHEN 1 THEN '女' WHEN 2 THEN '男' END sex,
+			a.birthday,
+			a.mobile,
+			a.position,
+			a.occupation,
+			a.intr,
+			a.is_player isPlayer,
+			a.is_referee isReferee,
+			a.is_gp isGP
+		FROM
+			user a,
+			user_wx b
+		WHERE
+			a.user_id = b.user_id
+		AND a.user_id = 1
+	</select>
+	
+	<update id="updateUserInfo">
+		UPDATE 
+			user 
+		SET
+			name = #{paramEntity.trueName},
+			nickname = #{paramEntity.userName},
+			sex = #{paramEntity.sex},
+			birthday = #{paramEntity.birthday},
+			weight = #{paramEntity.weight},
+			height = #{paramEntity.height},
+			position = #{paramEntity.position},
+			occupation = #{paramEntity.occupation},
+			idCode = #{paramEntity.idCode},
+			isGP = #{paramEntity.isGP},
+			intr = #{paramEntity.intr},
+		WHERE 
+			user_id = #{paramEntity.userId}
+	</update>
+	
+	<update id="userUpdateHeadImage">
+		UPDATE 
+			user a,user_wx b
+		SET
+			b.headimgurl = #{headImgUrl}
+		WHERE
+			a.user_id = b.user_id
+		AND a.user_id = #{userId}
+	</update>
+	
+	<update id="userUpdateMobile">
+		UPDATE 
+			user a
+		SET
+			a.mobile = #{mobile}
+		WHERE
+			a.user_id = #{userId}
+	</update>
+	
+	<update id="authentication">
+		UPDATE 
+			user a
+		SET
+			a.referee_name = #{credentialsName},
+			a.referee_img = #{imgPath},
+			a.referee_audit_status = 0,
+			a.referee_audit_operator_id = null,
+			a.referee_audit_time = null,
+			a.referee_audit_total = a.referee_audit_total + 1
+		WHERE
+			a.user_id = #{userId}
+	</update>
+	
 	<!-- ==============================================收货地址相关============================================================= -->
 	
 	<select id="receiveList" resultType="java.util.Map">

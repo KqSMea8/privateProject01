@@ -9,10 +9,12 @@ import org.springframework.stereotype.Service;
 import com.project.common.base.BaseResult;
 import com.project.common.base.BaseService;
 import com.project.common.page.PageForApp;
+import com.project.common.util.StringUtil;
 import com.project.service.entity.User;
 import com.project.service.proxy.MineProxy;
 import com.project.service.reqentity.receive.ReceiveSaveReqEntity;
 import com.project.service.reqentity.team.TeamSaveReqEntity;
+import com.project.service.reqentity.user.UserSaveReqEntity;
 
 import net.sf.json.JSONObject;
 
@@ -31,14 +33,116 @@ public class MineService extends BaseService {
 		}
 	}
 
-	public BaseResult userInfo(User user, String paramsStr) {
-		// TODO Auto-generated method stub
-		return null;
+	public BaseResult userInfo(User user) {
+		try {
+			return successResult("获取成功", mineProxy.userInfo(user.getUserId()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult updateUserInfo(User user, String paramsStr) {
+		UserSaveReqEntity paramEntity;
+		try {
+			paramEntity = json2Entity(paramsStr, UserSaveReqEntity.class);
+			if (!paramEntity.validate())
+				return errorParamsResult(paramEntity.getValidateErrorMsg());
+			paramEntity.setUserId(user.getUserId());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			if (mineProxy.updateUserInfo(paramEntity).intValue() == 1) {
+				return successResult("设置成功");
+			} else {
+				return successResult("设置失败");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
 	}
 
 	public BaseResult userUpdateHeadImage(User user, JSONObject params) {
-		// TODO Auto-generated method stub
-		return null;
+		String headImgUrl;
+		try {
+			headImgUrl = params.getString("headImgUrl");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			if (mineProxy.userUpdateHeadImage(headImgUrl, user.getUserId()).intValue() == 1) {
+				return successResult("设置成功");
+			} else {
+				return successResult("设置失败");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult userUpdateMobile(User user, JSONObject params) {
+		String mobile;
+		String code;
+		String validateType;
+		try {
+			mobile = params.getString("mobile");
+			code = params.getString("code");
+			validateType = params.getString("validateType");
+			if (StringUtil.isEmpty(mobile) || StringUtil.isEmpty(code) || StringUtil.isEmpty(validateType)) {
+				return successResult("参数短缺");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			String vcode = redisUtil.get(validateType + mobile);
+			if (StringUtil.isEmpty(vcode)) {
+				return successResult("验证码过期");
+			}
+			if (!vcode.equals(code)) {
+				return successResult("验证码不正确");
+			}
+			if (mineProxy.userUpdateMobile(mobile, user.getUserId()).intValue() == 1) {
+				return successResult("绑定成功");
+			} else {
+				return successResult("绑定失败");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult authentication(User user, JSONObject params) {
+		String credentialsName;
+		String imgPath;
+		try {
+			credentialsName = params.getString("mobile");
+			imgPath = params.getString("code");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			if (mineProxy.authentication(credentialsName, imgPath, user.getUserId()).intValue() == 1) {
+				return successResult("绑定成功");
+			} else {
+				return successResult("绑定失败");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
 	}
 	// ==============================================收货地址相关=============================================================
 

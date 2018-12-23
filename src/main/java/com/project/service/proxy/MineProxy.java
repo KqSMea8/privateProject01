@@ -10,12 +10,23 @@ import com.project.common.page.PageForApp;
 import com.project.service.entity.User;
 import com.project.service.reqentity.receive.ReceiveSaveReqEntity;
 import com.project.service.reqentity.team.TeamSaveReqEntity;
+import com.project.service.reqentity.user.UserSaveReqEntity;
 
 @Repository("mineProxy")
 public interface MineProxy {
 	// ==============================================用户相关=============================================================
 
 	public Map<String, Object> getCenterInfo(@Param("userId") Integer userId);
+
+	public Map<String, Object> userInfo(@Param("userId") Integer userId);
+
+	public Integer updateUserInfo(@Param("paramEntity") UserSaveReqEntity paramEntity);
+
+	public Integer userUpdateHeadImage(@Param("headImgUrl") String headImgUrl, @Param("userId") Integer userId);
+
+	public Integer userUpdateMobile(@Param("mobile") String mobile, @Param("userId") Integer userId);
+
+	public Integer authentication(@Param("credentialsName")String credentialsName, @Param("imgPath")String imgPath, @Param("userId")Integer userId);
 
 	// ==============================================收货地址相关=============================================================
 	public List<Map<String, Object>> receiveList(@Param("userId") Integer userId);
@@ -68,9 +79,9 @@ public interface MineProxy {
 	public Integer follow(@Param("followInfoId") Integer followInfoId, @Param("type") Integer type, @Param("userId") Integer userId);
 
 	public List<Map<String, Object>> followMatchlist(@Param("page") PageForApp page, @Param("userId") Integer userId);
-	
+
 	public List<Map<String, Object>> followTeamlist(@Param("page") PageForApp page, @Param("userId") Integer userId);
-	
+
 	public List<Map<String, Object>> followMemberlist(@Param("page") PageForApp page, @Param("userId") Integer userId);
 
 }

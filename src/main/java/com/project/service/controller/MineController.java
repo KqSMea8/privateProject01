@@ -29,12 +29,21 @@ public class MineController extends BaseController {
 	}
 
 	/*
-	 * 个人资料修改
+	 * 个人资料
 	 */
 	@CheckToken
 	@RequestMapping(value = "/user/info", method = RequestMethod.POST)
 	public BaseResult userInfo(@CheckParam() String token, String params) {
-		return mineService.userInfo(getUserByToken(token), params);
+		return mineService.userInfo(getUserByToken(token));
+	}
+
+	/*
+	 * 修改个人资料
+	 */
+	@CheckToken
+	@RequestMapping(value = "/user/update/info", method = RequestMethod.POST)
+	public BaseResult updateUserInfo(@CheckParam() String token, String params) {
+		return mineService.updateUserInfo(getUserByToken(token), params);
 	}
 
 	/*
@@ -44,6 +53,24 @@ public class MineController extends BaseController {
 	@RequestMapping(value = "/user/update/head", method = RequestMethod.POST)
 	public BaseResult userUpdateHeadImage(@CheckParam() String token, String params) {
 		return mineService.userUpdateHeadImage(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/*
+	 * 绑定手机号
+	 */
+	@CheckToken
+	@RequestMapping(value = "/user/update/mobile", method = RequestMethod.POST)
+	public BaseResult userUpdateMobile(@CheckParam() String token, String params) {
+		return mineService.userUpdateMobile(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/*
+	 * 认证裁判
+	 */
+	@CheckToken
+	@RequestMapping(value = "/user/authentication", method = RequestMethod.POST)
+	public BaseResult authentication(@CheckParam() String token, String params) {
+		return mineService.authentication(getUserByToken(token), getJSONObjectParams(params));
 	}
 
 	// ==============================================收货地址相关=============================================================
@@ -135,6 +162,7 @@ public class MineController extends BaseController {
 		return mineService.teamAlbumList(getJSONObjectParams(params));
 	}
 
+	// ==============================================我的相册相关=============================================================
 	/**
 	 * 我的相册
 	 */
