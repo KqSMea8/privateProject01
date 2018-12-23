@@ -109,4 +109,13 @@ public class CommodityController extends BaseController {
 	public BaseResult diamondsCommodityOrder(String token, String params) {
 		return commodityService.diamondsCommodityOrder(getUserByToken(token), getJSONObjectParams(params));
 	}
+
+	/**
+	 * 钻石商品订单列表
+	 */
+	@CheckToken
+	@RequestMapping(value = "/diamonds/rechargelog", method = RequestMethod.POST)
+	public BaseResult diamondsRechargelog(String token, String params) {
+		return commodityService.diamondsRechargelog(getUserByToken(token), getJSONObjectParams(params));
+	}
 }

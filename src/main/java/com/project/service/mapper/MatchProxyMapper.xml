@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.service.proxy.MatchProxy">
+	
+	<select id="matchlist" resultType="java.util.Map">
+		SELECT
+			a.match_info_id matchInfoId,
+			a.match_name matchName,
+			a.logo_img logoPath,
+			CONCAT(IFNULL(a.city_name,''),'-',IFNULL(a.district_name,'')) region,
+			(SELECT title FROM class WHERE id = a.match_type) matchType,
+			CONCAT(a.start_date,'~',a.end_date) matchTime,
+			a.status,
+			CASE a.status WHEN 1 THEN '报名中' WHEN 2 THEN '待开赛' WHEN 3 THEN '进行中' WHEN 4 THEN '结束' END statusStr
+		FROM
+			match_info a
+		WHERE
+			a.del_flag = 1
+		<if test="cityId != null">
+			AND	a.city_id = #{cityId}
+		</if>
+		<if test="paramEntity.cityId != null">
+			AND a.city_id = #{paramEntity.cityId}
+		</if>
+		<if test="paramEntity.districtId != null">
+			AND a.district_id = #{paramEntity.districtId}
+		</if>
+		<if test="paramEntity.marchType != null">
+			AND a.match_type = #{paramEntity.marchType}
+		</if>
+		<if test="paramEntity.status != null">
+			AND a.status = #{paramEntity.status}
+		</if>
+		<if test='paramEntity.searchKey != null and paramEntity.searchKey !=""'>
+			AND a.match_name LIKE CONCAT('%',#{paramEntity.searchKey},'%')
+		</if>
+		<if test='paramEntity.startDate != null and paramEntity.startDate != ""'>
+			AND a.create_time &gt;= #{paramEntity.startDate}
+		</if>
+		<if test='paramEntity.endDate != null and paramEntity.endDate != ""'>
+			AND a.create_time &lt;= #{paramEntity.endDate}
+		</if>
+		ORDER BY
+			a.create_time DESC
+	</select>
+
+	<select id="matchinfo" resultType="java.util.Map">
+		SELECT
+			a.match_info_id matchInfoId,
+			a.match_name matchName,
+			a.logo_img logoPath,
+			CONCAT(IFNULL(a.city_name,''),'-',IFNULL(a.district_name,'')) region,
+			(SELECT title FROM class WHERE id = a.match_type) matchType,
+			CONCAT(a.start_date,'~',a.end_date) matchTime,
+			a.status,
+			CASE a.status WHEN 1 THEN '报名中' WHEN 2 THEN '待开赛' WHEN 3 THEN '进行中' WHEN 4 THEN '结束' END statusStr,
+			a.sign_up_content,
+			a.regulations_content,
+			EXISTS(SELECT follow_id FROM follow WHERE follow_info_id = a.match_info_id AND type = 1 and user_id = #{userId} AND status = 1)
+		FROM
+			match_info a
+		WHERE
+			a.del_flag = 1
+		AND a.match_info_id = #{matchInfoId}
+	</select>
+	
+	<select id="matchEndInfo" resultType="java.util.Map">
+		SELECT
+			b.team_info_id winTeamId,
+			b.team_name winTeamName,
+			b.team_logo winTeamLogo,
+			a.win_num totalWin,
+			a.draw_num totalDraw,
+			a.lose_num totalLose,
+			a.sponsor_ad sponsorAD
+		FROM
+			match_join_team a,
+			team_info b
+		WHERE
+			a.team_info_id = b.team_info_id
+		AND a.match_info_id = = #{matchInfoId}
+		AND a.is_winer = 1
+	</select>
+	
+	<select id="marchRuningInfo" resultType="java.util.Map">
+		SELECT
+			#{userId} userRole,
+			a.match_schedule_id matchScheduleId,
+			b.team_info_id teamidA,
+			b.team_name teamNameA,
+			b.team_logo teamLogoA,
+			a.score1 scoreA,
+			c.team_info_id teamidB,
+			c.team_name teamNameB,
+			c.team_logo teamLogoB,
+			a.score2 scoreB,
+			a.address,
+			(SELECT GROUP_CONCAT(name) FROM user WHERE FIND_IN_SET(user_id, a.video_info)) memberOfVideo,
+			(SELECT GROUP_CONCAT(name) FROM user WHERE FIND_IN_SET(user_id, a.referee_info)) memberOfReferee,
+			(SELECT GROUP_CONCAT(name) FROM user WHERE FIND_IN_SET(user_id, a.event_reality_info)) memberOfEventReality,
+			(SELECT GROUP_CONCAT(name) FROM user WHERE FIND_IN_SET(user_id, a.committee_info)) memberOfCommittee
+		FROM 
+			match_schedule a,
+			team_info b,
+			team_info c
+		WHERE
+			a.team_info_id1 = b.team_info_id
+		AND a.team_info_id2 = c.team_info_id
+		AND a.schedule_result is NULL
+		AND a.schedule_start_time &lt; NOW()
+		AND a.match_info_id = = #{matchInfoId}
+	</select>
+	
+	<select id="matchinfoImagelist" resultType="java.lang.String">
+		SELECT
+			a.file_path imagePath
+		FROM
+			match_schedule_file a
+		WHERE
+			a.file_type = 2
+		AND a.match_info_id = #{matchInfoId}
+		<if test="teamId != null">
+			AND a.team_info_id = #{teamId}
+		</if>
+		<if test="teamMemberId != null">
+			AND a.team_member_id = #{teamMemberId}
+		</if>
+	</select>
+	
+	<sql id="matchinfoVideoBaseSql">
+		SELECT
+			a.match_schedule_file_id videoId,
+			a.file_title videoTitle,
+			a.file_path videoPath,
+			a.thumbnail_path thumbnailPath,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') createTime,
+			a.total_browse totalBrowse
+		FROM
+			match_schedule_file a
+		WHERE
+			a.file_type = 1
+		AND a.match_info_id = #{matchInfoId}
+	</sql>
+	
+	<select id="matchinfoVideolist" resultType="java.util.Map">
+		<include refid="matchinfoVideoBaseSql"/>
+		<if test="teamId != null">
+			AND a.team_info_id = #{teamId}
+		</if>
+		<if test="teamMemberId != null">
+			AND a.team_member_id = #{teamMemberId}
+		</if>
+	</select>
+	
+	<select id="matchinfoVideoInfo" resultType="java.util.Map">
+		<include refid="matchinfoVideoBaseSql"/>
+		AND a.match_schedule_file_id = #{videoId}
+	</select>
+	
+	<select id="videoInfoCommentlist" resultType="java.util.Map">
+		SELECT
+			b.user_id userId,
+			b.name userName,
+			c.headimgurl headImgUrl,
+			a.comment_content commentContent,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T') createTime
+		FROM
+			match_schedule_file_comment a,
+			user b,
+			user_wx c
+		WHERE
+			a.user_id = b.user_id
+		AND b.user_id = c.user_id
+		AND	a.match_schedule_file_id = #{videoId}
+	</select>
+	
+	<insert id="videoInfoComment">
+		INSERT INTO match_schedule_file_comment (
+			match_info_id,
+			match_schedule_id,
+			match_schedule_file_id,
+			comment_content,
+			user_id
+		)
+		SELECT
+			match_info_id,
+			match_schedule_id,
+			match_schedule_file_id,
+			#{commentContent},
+			#{userId}
+		FROM
+			match_schedule_file
+		WHERE
+			match_schedule_file_id = #{videoId}
+	</insert>
+	
+	<insert id="matchApply">
+		INSERT INTO match_join_team (
+			match_info_id,
+			team_info_id,
+			contacts,
+			contactsTel
+		)
+		VALUES
+			(
+				#{matchInfoId},
+				#{teamId},
+				#{contacts},
+				#{contactsTel}
+			)
+	</insert>
+	
+	<select id="getMemberList" resultType="java.util.Map">
+		TODO
+	</select>
+	
+	<insert id="addEventreality">
+		TODO
+	</insert>
+	
+	<select id="eventRealityList" resultType="java.util.Map">
+		TODO
+	</select>
+</mapper>

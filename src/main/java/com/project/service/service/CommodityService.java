@@ -1,5 +1,6 @@
 package com.project.service.service;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -134,15 +135,18 @@ public class CommodityService extends BaseService {
 
 	public BaseResult diamondsRecharge(User user, JSONObject params) {
 		Integer rechargeTotal;
+		BigDecimal cashTotal;
 		try {
 			rechargeTotal = params.getInt("rechargeTotal");
+			cashTotal = new BigDecimal(params.getDouble("cashTotal"));
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorParamsResult();
 		}
 		try {
-			Map<String, Object> result = new HashMap<String, Object>();
-			if (commodityProxy.diamondsRecharge(rechargeTotal, user.getUserId()).intValue() == 1) {
+			boolean result = commodityProxy.diamondsRecharge(rechargeTotal, user.getUserId()).intValue() == 1;
+			result = result && commodityProxy.userRecharge(rechargeTotal,cashTotal, user.getUserId()).intValue() == 1;
+			if (result) {
 				return successResult("充值成功", result);
 			} else {
 				return errorResult("充值失败!");
@@ -231,6 +235,22 @@ public class CommodityService extends BaseService {
 		}
 		try {
 			return successResult("获取成功", commodityProxy.diamondsCommodityList(page, user.getUserId()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult diamondsRechargelog(User user, JSONObject params) {
+		PageForApp page = null;
+		try {
+			page = getPageEntity(params);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+		try {
+			return successResult("获取成功", commodityProxy.diamondsRechargelog(page, user.getUserId()));
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorExceptionResult();

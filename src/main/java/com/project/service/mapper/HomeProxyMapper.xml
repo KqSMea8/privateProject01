@@ -40,7 +40,7 @@
 			(SELECT title FROM class WHERE id = a.match_type) matchType,
 			CONCAT(a.start_date,'~',a.end_date) matchTime,
 			a.status,
-			CASE a.status WHEN 1 THEN '报名中' WHEN 2 THEN '待开赛' WHEN 3 THEN '进行中' END statusStr
+			CASE a.status WHEN 1 THEN '报名中' WHEN 2 THEN '待开赛' WHEN 3 THEN '进行中' WHEN 4 THEN '结束' END statusStr
 		FROM
 			match_info a
 		WHERE

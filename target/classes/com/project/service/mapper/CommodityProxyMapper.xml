@@ -125,6 +125,22 @@
 			user_id = #{userId}
 	</update>
 	
+	<insert id="userRecharge">
+		INSERT INTO user_recharge (
+			user_id,
+			recharge_amount,
+			diamonds_amount,
+			proportion
+		)
+		VALUES
+			(
+				#{userId},
+				#{cashTotal},
+				#{rechargeTotal},
+				CONCAT(#{cashTotal}, ':', FORMAT(#{rechargeTotal} / #{cashTotal}, 0))
+			)
+	</insert>
+	
 	<select id="getDiamonds" resultType="java.util.Map">
 		SELECT
 			diamonds
@@ -168,5 +184,18 @@
 		WHERE
 			a.commodity_info_id = b.commodity_info_id
 		AND a.user_id = #{userId}
+	</select>
+	
+	<select id="diamondsRechargelog" resultType="java.util.Map">
+		SELECT
+			title,
+			recharge_amount rechargeAmount,
+			DATE_FORMAT(create_time,'%Y-%m-%d %T') rechargeTime
+		FROM
+			user_recharge
+		WHERE 
+			user_id = #{userId}
+		ORDER BY
+			create_time DESC
 	</select>
 </mapper>

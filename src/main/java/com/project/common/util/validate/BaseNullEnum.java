@@ -8,7 +8,6 @@ public enum BaseNullEnum implements BaseEnumInterface {
 
 	@Override
 	public BaseEnumInterface getEnumByName(String enumName) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
