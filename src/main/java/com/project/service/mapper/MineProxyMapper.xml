@@ -537,7 +537,7 @@
 			(SELECT title FROM class WHERE id = b.match_type) matchType,
 			CONCAT(b.start_date,'~',b.end_date) matchTime,
 			b.status,
-			CASE b.status WHEN 1 THEN '报名中' WHEN 2 THEN '待开赛' WHEN 3 THEN '进行中' END statusStr
+			CASE b.status WHEN 1 THEN '报名中' WHEN 2 THEN '待开赛' WHEN 3 THEN '进行中' WHEN 4 THEN '结束' END statusStr
 		FROM
 			follow a,
 			match_info b
