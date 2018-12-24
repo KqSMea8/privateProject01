@@ -84,7 +84,7 @@
 	
 	<select id="marchRuningInfo" resultType="java.util.Map">
 		SELECT
-			#{userId} userRole,
+			IF(FIND_IN_SET(#{userId},a.referee_info),1,IF(FIND_IN_SET(#{userId},a.event_reality_info),2,0)) userRole,
 			a.match_schedule_id matchScheduleId,
 			b.team_info_id teamidA,
 			b.team_name teamNameA,

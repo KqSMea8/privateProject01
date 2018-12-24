@@ -164,7 +164,6 @@ public class PlatformService extends BaseService {
 		}
 
 		try {
-			// TODO
 			return successResult("获取成功", platformProxy.screeMember(teamId));
 		} catch (Exception e) {
 			e.printStackTrace();

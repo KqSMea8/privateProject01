@@ -62,7 +62,6 @@ public class MatchService extends BaseService {
 				matchEndInfo = matchProxy.matchEndInfo(matchInfoId);
 			} else if (3 == status.intValue()) {
 				marchRuningInfo = matchProxy.marchRuningInfo(matchInfoId, user == null ? 0 : user.getUserId());
-				// TODO userRole 待处理
 			}
 			result.put("matchEndInfo", matchEndInfo);
 			result.put("marchRuningInfo", marchRuningInfo);
