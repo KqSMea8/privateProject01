@@ -120,7 +120,7 @@
 		UPDATE 
 			user
 		SET 
-			diamonds = diamonds + 1
+			diamonds = diamonds + #{rechargeTotal}
 		WHERE
 			user_id = #{userId}
 	</update>
@@ -188,7 +188,13 @@
 	
 	<select id="diamondsRechargelog" resultType="java.util.Map">
 		SELECT
-			title,
+			case type 
+				when 1 then '充值' 
+				when 2 then '签到' 
+				when 3 then '生日礼金' 
+				when 4 then '分享' 
+				when 5 then '资料完善' 
+			end title,
 			recharge_amount rechargeAmount,
 			DATE_FORMAT(create_time,'%Y-%m-%d %T') rechargeTime
 		FROM

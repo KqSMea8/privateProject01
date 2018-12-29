@@ -25,9 +25,9 @@ public interface CommodityProxy {
 
 	// =============================================钻石相关=============================================================
 
-	public Integer diamondsRecharge(@Param("rechargeTotal") Integer rechargeTotal, @Param("userId") Integer userId);
+	public Integer diamondsRecharge(@Param("rechargeTotal") BigDecimal rechargeTotal, @Param("userId") Integer userId);
 
-	public BigDecimal userRecharge(@Param("rechargeTotal") Integer rechargeTotal, @Param("cashTotal") BigDecimal cashTotal, @Param("userId") Integer userId);
+	public BigDecimal userRecharge(@Param("rechargeTotal") BigDecimal rechargeTotal, @Param("cashTotal") BigDecimal cashTotal, @Param("userId") Integer userId);
 
 	public Map<String, Object> getDiamonds(@Param("userId") Integer userId);
 

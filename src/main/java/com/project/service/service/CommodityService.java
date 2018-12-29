@@ -134,10 +134,10 @@ public class CommodityService extends BaseService {
 	// =============================================钻石相关=============================================================
 
 	public BaseResult diamondsRecharge(User user, JSONObject params) {
-		Integer rechargeTotal;
+		BigDecimal rechargeTotal;
 		BigDecimal cashTotal;
 		try {
-			rechargeTotal = params.getInt("rechargeTotal");
+			rechargeTotal = new BigDecimal(params.getString("rechargeTotal"));
 			cashTotal = new BigDecimal(params.getDouble("cashTotal"));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -145,7 +145,7 @@ public class CommodityService extends BaseService {
 		}
 		try {
 			boolean result = commodityProxy.diamondsRecharge(rechargeTotal, user.getUserId()).intValue() == 1;
-			result = result && commodityProxy.userRecharge(rechargeTotal,cashTotal, user.getUserId()).intValue() == 1;
+			result = result && commodityProxy.userRecharge(rechargeTotal, cashTotal, user.getUserId()).intValue() == 1;
 			if (result) {
 				return successResult("充值成功", result);
 			} else {
@@ -195,11 +195,12 @@ public class CommodityService extends BaseService {
 	}
 
 	public BaseResult diamondsCommodityBuy(User user, JSONObject params) {
-		Integer commodityId, commodityPrice, receiveId;
+		Integer commodityId, receiveId;
+		BigDecimal commodityPrice;
 		try {
 			commodityId = params.getInt("commodityId");
 			receiveId = params.getInt("receiveId");
-			commodityPrice = params.getInt("commodityPrice");
+			commodityPrice = new BigDecimal("-" + params.getString("commodityPrice"));
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorParamsResult();
