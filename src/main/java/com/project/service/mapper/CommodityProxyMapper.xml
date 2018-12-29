@@ -194,6 +194,7 @@
 				when 3 then '生日礼金' 
 				when 4 then '分享' 
 				when 5 then '资料完善' 
+				when 6 then '连续签到满30天'
 			end title,
 			recharge_amount rechargeAmount,
 			DATE_FORMAT(create_time,'%Y-%m-%d %T') rechargeTime
