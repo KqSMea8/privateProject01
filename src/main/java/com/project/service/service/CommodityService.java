@@ -143,16 +143,20 @@ public class CommodityService extends BaseService {
 			e.printStackTrace();
 			return errorParamsResult();
 		}
+		TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
 		try {
-			boolean result = commodityProxy.diamondsRecharge(rechargeTotal, user.getUserId()).intValue() == 1;
-			result = result && commodityProxy.userRecharge(rechargeTotal, cashTotal, user.getUserId()).intValue() == 1;
+			boolean result = commodityProxy.userRecharge(rechargeTotal, cashTotal, user.getUserId()).intValue() == 1;
+			result = result && commodityProxy.diamondsRecharge(rechargeTotal, user.getUserId()).intValue() == 1;
 			if (result) {
+				transactionManager.commit(status);
 				return successResult("充值成功", result);
 			} else {
+				transactionManager.rollback(status);
 				return errorResult("充值失败!");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			transactionManager.rollback(status);
 			return errorExceptionResult();
 		}
 	}

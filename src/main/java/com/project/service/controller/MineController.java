@@ -120,11 +120,28 @@ public class MineController extends BaseController {
 	}
 
 	/*
+	 * 申请加入球队
+	 */
+	@CheckToken
+	@RequestMapping(value = "/team/member/apply", method = RequestMethod.POST)
+	public BaseResult teamMemberApply(String token, String params) {
+		return mineService.teamMemberApply(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/*
 	 * 我的球队球员列表
 	 */
 	@RequestMapping(value = "/team/member/list", method = RequestMethod.POST)
 	public BaseResult teamMemberList(String token, String params) {
 		return mineService.teamMemberList(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/*
+	 * 设置队员职务
+	 */
+	@RequestMapping(value = "/team/member/settingrole", method = RequestMethod.POST)
+	public BaseResult settingRole(String token, String params) {
+		return mineService.settingRole(getUserByToken(token), getJSONObjectParams(params));
 	}
 
 	/*
@@ -227,5 +244,15 @@ public class MineController extends BaseController {
 	@RequestMapping(value = "/follow/memberlist", method = RequestMethod.POST)
 	public BaseResult followMemberlist(String token, String params) {
 		return mineService.followMemberlist(getUserByToken(token), getJSONObjectParams(params));
+	}
+	// ==============================================我的游戏=============================================================
+
+	/**
+	 * 我的游戏
+	 */
+	@CheckToken
+	@RequestMapping(value = "/gamelist", method = RequestMethod.POST)
+	public BaseResult gamelist(String token, String params) {
+		return mineService.gamelist(getUserByToken(token), getJSONObjectParams(params));
 	}
 }

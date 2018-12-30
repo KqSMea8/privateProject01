@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.project.service.proxy.GameProxy">
+	<select id="list" resultType="java.util.Map">
+		SELECT
+			a.competition_game_id gameInfoId,
+			a.game_name gameName,
+			CONCAT(a.team1_name,'VS',a.team2_name) gameTitle,
+			CASE 
+				WHEN a.game_time &gt; NOW() THEN 0
+				WHEN a.game_time &lt;= NOW() AND a.result_time IS NULL THEN 1
+				WHEN a.result_time IS NOT NULL THEN 2
+			END gameStatus,
+			CASE 
+				WHEN a.game_time &gt; NOW() THEN '未开场'
+				WHEN a.game_time &lt;= NOW() AND a.result_time IS NULL THEN '比赛中'
+				WHEN a.result_time IS NOT NULL THEN '完场'
+			END gameStatusStr,
+			a.game_time time,
+			'' otherStr
+		FROM
+			competition_game a
+		WHERE
+			a.del_flag = 1
+		AND a.status = 1
+		ORDER BY
+			a.create_time DESC
+	</select>
+
+	<select id="info" resultType="java.util.Map">
+		SELECT
+			(SELECT diamonds FROM user WHERE user_id  = #{userId}) diamonds,
+			a.competition_game_id gameInfoId,
+			a.game_name gameName,
+			DATE_FORMAT(a.game_time, '%Y-%m-%d %T') gameTime,
+			a.team1_name teamNameA,
+			a.team1_logo teamLogoA,
+			a.team2_name teamNameB,
+			a.team2_logo teamLogoB,
+			CONCAT(a.team1_name,if(a.win_team_1_let &gt;= 0,' +',' -'),a.win_team_1_let) letTeamA,
+			a.win_team1_odds letOddsTeamA,
+			CONCAT(a.team2_name,if(a.win_team_2_let &gt;= 0,' +',' -'),a.win_team_2_let) letTeamB,
+			a.win_team2_odds letOddsTeamB,
+			CONCAT('大于 ',a.sizes_balls,' 个')  sizesBallsBigTitle,
+			a.sizes_balls_big_odds sizesBallsBigOdds,
+			CONCAT('小于 ',a.sizes_balls,' 个') sizesBallsSmallTitle,
+			a.sizes_balls_small_odds sizesBallsSmallOdds,
+			a.ninety_total_single_odds ninetyTotalSingleOodds,
+			a.ninety_total_double_odds ninetyTotalDoubleOdds
+		FROM
+			competition_game a
+		WHERE
+			a.competition_game_id = #{gameInfoId}
+	</select>
+	
+	<select id="scoreOddsList" resultType="java.util.Map">
+		SELECT
+			a.competition_game_odds_id oddsId,
+			<if test="oddsType == 1">
+				CONCAT(a.score_team1,':',a.score_team2) title,
+			</if>
+			<if test="oddsType == 2">
+				CONCAT(a.score_team1,':',a.score_team2) title,
+			</if>
+			odds
+		FROM
+			competition_game_odds a
+		WHERE
+			a.competition_game_id = 1
+		AND a.del_flag = 1
+		AND a.status = 1
+		AND a.odds_type = #{oddsType}
+	</select>
+	
+	<select id="isHaveEnoughAmount" resultType="java.lang.Boolean">
+		SELECT (diamonds - #{amount}) >= 0 FROM user WHERE user_id  = #{userId}
+	</select>
+	
+	<insert id="gambling">
+		INSERT INTO competition_game_buy_info (
+				competition_game_id,
+				buy_type,
+				competition_game_odds_id,
+				amount,
+				odds,
+				estimate,
+				user_id
+			)
+		VALUES
+			(
+				#{gameInfoId},
+				#{type},
+				#{oddsId},
+				#{amount},
+				#{odds},
+				#{estimate},
+				#{userId}
+			)
+	</insert>
+</mapper>

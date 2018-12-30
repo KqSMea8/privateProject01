@@ -66,6 +66,15 @@ public class PlatformController extends BaseController {
 	}
 
 	/*
+	 * 赛事-申请参赛可选团队
+	 */
+	@CheckToken
+	@RequestMapping(value = "/screen/teamforapply", method = RequestMethod.POST)
+	public BaseResult screeTeamForApply(@CheckParam()String token) {
+		return platformService.screeTeamForApply(getUserByToken(token));
+	}
+
+	/*
 	 * 赛事-获取可选球队
 	 */
 	@RequestMapping(value = "/screen/team", method = RequestMethod.POST)
@@ -79,5 +88,23 @@ public class PlatformController extends BaseController {
 	@RequestMapping(value = "/screen/member", method = RequestMethod.POST)
 	public BaseResult screeMember(String params) {
 		return platformService.screeMember(getJSONObjectParams(params));
+	}
+
+	/*
+	 * 签到
+	 */
+	@CheckToken
+	@RequestMapping(value = "/sgin", method = RequestMethod.POST)
+	public BaseResult sgin(@CheckParam String token, String params) {
+		return platformService.sgin(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/*
+	 * 签到
+	 */
+	@CheckToken
+	@RequestMapping(value = "/shareok", method = RequestMethod.POST)
+	public BaseResult shareOk(@CheckParam String token, String params) {
+		return platformService.shareOk(getUserByToken(token), getJSONObjectParams(params));
 	}
 }

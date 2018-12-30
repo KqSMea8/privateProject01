@@ -59,6 +59,26 @@
 			city_code
 	</select>
 	
+	<select id="screeTeamForApply" resultType="java.util.Map">
+		SELECT
+			a.team_name teamName,
+			a.team_info_id teamId
+		FROM
+			team_info a
+		WHERE
+			EXISTS (
+				SELECT
+					team_member_id
+				FROM
+					team_member
+				WHERE
+					team_info_id = a.team_info_id
+				AND user_id = #{userId}
+				AND role_type in (1,4)
+				AND status = 1
+			)
+	</select>
+	
 	<select id="screeTeam" resultType="java.util.Map">
 		SELECT
 			b.team_info_id teamId,
@@ -73,6 +93,49 @@
 	</select>
 	
 	<select id="screeMember" resultType="java.util.Map">
-		<!-- WAIT TODO  -->
+		SELECT
+			a.team_member_id memberId,
+			b.name memberName
+		FROM
+			match_join_user a,user b
+		WHERE
+			a.user_id = b.user_id
+		AND a.status = 1
+		AND a.team_info_id = #{teamId}
+		AND a.match_info_id = #{matchInfoId}
+	</select>
+	
+	<update id="diamondsRecharge" >
+		UPDATE 
+			user
+		SET 
+			diamonds = diamonds + #{rechargeTotal}
+		WHERE
+			user_id = #{userId}
+	</update>
+	
+	<insert id="userRecharge">
+		INSERT INTO user_recharge (
+			user_id,
+			type,
+			diamonds_amount
+		)
+		VALUES
+			(
+				#{userId},
+				#{type},
+				#{rechargeTotal}
+			)
+	</insert>
+	
+	<select id="totalContinuousSign" resultType="java.lang.Boolean">
+		SELECT
+			count(user_recharge_id) >= 30
+		FROM
+			user_recharge
+		WHERE
+			type = 2
+		AND user_id = #{userId}
+		AND DATE(create_time) > DATE(DATE_SUB(NOW(), INTERVAL 30 DAY))
 	</select>
 </mapper>
