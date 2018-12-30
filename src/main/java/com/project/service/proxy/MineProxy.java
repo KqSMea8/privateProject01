@@ -26,7 +26,9 @@ public interface MineProxy {
 
 	public Integer userUpdateMobile(@Param("mobile") String mobile, @Param("userId") Integer userId);
 
-	public Integer authentication(@Param("credentialsName")String credentialsName, @Param("imgPath")String imgPath, @Param("userId")Integer userId);
+	public Integer authentication(@Param("credentialsName") String credentialsName, @Param("imgPath") String imgPath, @Param("userId") Integer userId);
+
+	public boolean isHaveAllSave(@Param("userId") Integer userId);
 
 	// ==============================================收货地址相关=============================================================
 	public List<Map<String, Object>> receiveList(@Param("userId") Integer userId);
@@ -43,19 +45,29 @@ public interface MineProxy {
 
 	public Integer updateTeam(@Param("paramEntity") TeamSaveReqEntity paramEntity, @Param("user") User user);
 
-	public Map<String, Object> teamInfo(@Param("teamId") Integer teamId);
+	public Map<String, Object> teamInfo(@Param("teamId") Integer teamId, @Param("userId") Integer userId);
 
 	public Map<String, Object> getTeamCount(@Param("teamId") Integer teamId);
 
-	public Map<String, Object> matchScheduleInfo(@Param("teamId") Integer teamId);
+	public Map<String, Object> matchScheduleInfo(@Param("teamId") Integer teamId, @Param("userId") Integer userId);
+
+	public Integer getApplyAuditStatus(@Param("teamId") Integer teamId, @Param("userId") Integer userId);
+
+	public Integer teamMemberApply(@Param("teamId") Integer teamId, @Param("userId") Integer userId, @Param("roleType") Integer roleType);
 
 	public Map<String, Object> teamInfoMore(@Param("teamId") Integer teamId, @Param("year") String year);
 
+	public Integer totalJoinUser(@Param("teamId") Integer teamId, @Param("year") String year);
+
 	public List<Map<String, Object>> matchScheduleList(@Param("teamId") Integer teamId, @Param("year") String year);
+
+	public Integer getRoleType(@Param("teamId") Integer teamId, @Param("userId") Integer userId);
 
 	public List<Map<String, Object>> applyUserList(@Param("teamId") Integer teamId);
 
 	public List<Map<String, Object>> memberList(@Param("teamId") Integer teamId, @Param("order") Integer order, @Param("sort") String sort);
+
+	public Integer settingRole(@Param("teamMemberId") Integer teamMemberId, @Param("roleType") Integer roleType);
 
 	public List<Map<String, Object>> listEdplayers(@Param("teamId") Integer teamId, @Param("userId") Integer userId);
 
@@ -83,5 +95,8 @@ public interface MineProxy {
 	public List<Map<String, Object>> followTeamlist(@Param("page") PageForApp page, @Param("userId") Integer userId);
 
 	public List<Map<String, Object>> followMemberlist(@Param("page") PageForApp page, @Param("userId") Integer userId);
+	// ==============================================我的游戏=============================================================
+
+	public List<Map<String, Object>> gamelist(@Param("page") PageForApp page, @Param("status") Integer status, @Param("userId") Integer userId);
 
 }

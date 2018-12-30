@@ -94,6 +94,34 @@
 			a.user_id = #{userId}
 	</update>
 	
+	<select id = "isHaveAllSave" resultType = "java.lang.Boolean">
+		SELECT
+			COUNT(a.user_id)
+		FROM
+			USER a
+		WHERE
+			a.user_id = 1
+		AND a.name IS NOT NULL
+		AND a.sex IS NOT NULL
+		AND a.birthday IS NOT NULL
+		AND a.qq IS NOT NULL
+		AND a.id_card_number IS NOT NULL
+		AND a.weight IS NOT NULL
+		AND a.height IS NOT NULL
+		AND a.position IS NOT NULL
+		AND a.mobile IS NOT NULL
+		AND a.intr IS NOT NULL
+		AND a.occupation IS NOT NULL
+		AND ! EXISTS (
+			SELECT
+				user_recharge_id
+			FROM
+				user_recharge
+			WHERE
+				user_id = a.user_id
+			AND type = 5
+		)
+	</select>
 	<!-- ==============================================收货地址相关============================================================= -->
 	
 	<select id="receiveList" resultType="java.util.Map">
@@ -172,7 +200,7 @@
 		AND b.user_id = #{userId}
 	</select>
 	
-	<insert id="createTeam">
+	<insert id="createTeam" useGeneratedKeys="true" keyProperty="paramEntity.teamId">
 		INSERT INTO footballnew.team_info (
 			team_name,
 			team_domain,
@@ -264,7 +292,7 @@
 			establish,
 			linkman contacts,
 			mobile contactsTel,
-			user_id userId
+			IFNULL((SELECT role_type FROM team_member WHERE team_info_id = team_info.team_info_id and user_id = 1),0) roleType
 		FROM
 			team_info
 		WHERE
@@ -291,9 +319,9 @@
 			b.team_info_id teamid,
 			b.team_name teamName,
 			b.team_logo teamLogo,
-			(SELECT CONCAT(IFNULL( city_name,''),IFNULL(district_name,''),IFNULL(address,'')) FROM match_info WHERE match_info_id = a.match_info_id) address,
-			0 signUpTotal,
-			0 signUpStatus
+			(SELECT CONCAT(IFNULL( city_name,''),IFNULL(district_name,''),IFNULL(a.address,'')) FROM match_info WHERE match_info_id = a.match_info_id) address,
+			(SELECT COUNT(DISTINCT team_member_id) FROM match_join_user WHERE match_info_id = a.match_info_id AND status = 0) signUpTotal,
+			(SELECT status FROM match_join_user WHERE match_info_id = a.match_info_id AND user_id = #{userId}) signUpStatus
 		FROM
 			match_schedule a,
 			team_info b
@@ -310,6 +338,33 @@
 		LIMIT 1
 	</select>
 	
+	<select id="getApplyAuditStatus" resultType="java.lang.Integer">
+		SELECT
+			audit_status
+		FROM
+			team_member
+		WHERE
+			team_info_id = #{teamId}
+		AND user_id = #{userId}
+	</select>
+	
+	<insert id="teamMemberApply">
+		INSERT INTO foofballnew.team_member (
+			team_info_id,
+			role_type,
+			<if test="roleType == 1">audit_status,audit_time,audit_user_id,</if>
+			user_id
+		)
+		VALUES
+			(
+				#{teamId},
+				#{roleType},
+				<if test="roleType == 1">1,now(),#{userId},</if>
+				#{userId}
+			)
+				
+	</insert>
+	
 	<select id="teamInfoMore" resultType="java.util.Map">
 		SELECT
 			#{teamId} teamId,
@@ -317,15 +372,24 @@
 			IFNULL(SUM(show_num),0) totalGame,
 			IFNULL(SUM(win_num),0) totalWin,
 			IFNULL(SUM(draw_num),0) totalDraw,
-			IFNULL(SUM(lose_num),0) totalLose,
-			0 peopleAverage,
-			0 matchAverage
+			IFNULL(SUM(lose_num),0) totalLose
 		FROM
 			match_join_team a
 		WHERE
 			a.team_info_id = #{teamId}
 		AND a.status = 1
 		AND YEAR(a.create_time) = #{year}
+	</select>
+	
+	<select id="totalJoinUser" resultType="java.lang.Integer">
+		SELECT
+			COUNT(DISTINCT team_member_id)
+		FROM
+			match_join_user
+		WHERE
+			team_info_id = 1
+		AND year(create_time) = 2018
+		AND status = 1	
 	</select>
 	
 	<select id="matchScheduleList" resultType="java.util.Map">
@@ -348,6 +412,16 @@
 		AND YEAR(a.create_time) = #{year}
 		GROUP BY
 			a.match_info_id
+	</select>
+	
+	<select id="getRoleType" resultType="java.lang.Integer">
+		SELECT
+			role_type
+		FROM
+			team_member
+		WHERE
+			team_info_id = #{teamId}
+		AND user_id = #{userId}
 	</select>
 	
 	<select id="applyUserList" resultType="java.util.Map">
@@ -379,7 +453,19 @@
 			CASE b.sex WHEN 0 THEN '保密' WHEN 1 THEN '女' WHEN 2 THEN '男' END sex,
 			TIMESTAMPDIFF(YEAR, b.birthday, NOW()) age,
 			a.job,
-			a.position
+			a.position,
+			CASE a.role_type 
+				WHEN 0 THEN '队员' 
+				WHEN 1 THEN '领导' 
+				WHEN 2 THEN '队长' 
+				WHEN 3 THEN '副队长' 
+				WHEN 4 THEN '领队' 
+				WHEN 5 THEN '教练' 
+				WHEN 6 THEN '摄影师' 
+				WHEN 7 THEN '财务' 
+				WHEN 8 THEN '啦啦队' 
+			END roleTypeStr,
+			a.role_type roleType
 		FROM
 			team_member a,
 			user b,
@@ -395,11 +481,20 @@
 			<if test="order != null and order == 2">a.position #{sort}</if>
 	</select>
 	
+	<update id="settingRole">
+		UPDATE 
+			team_member
+		SET 
+			role_type = #{roleType}
+		AND 
+			team_member_id = #{teamMemberId}
+	</update>
+	
 	<select id="listEdplayers" resultType="java.util.Map">
 		SELECT
 			a.user_id,
 			a.name,
-			b.headimgurl,
+			b.headimgurl headImgUrl,
 			a.mobile,
 			CASE a.sex WHEN 0 THEN '保密' WHEN 1 THEN '女' WHEN 2 THEN '男' END sex,
 			TIMESTAMPDIFF(YEAR, a.birthday, NOW()) age,
@@ -429,8 +524,7 @@
 			c.headimgurl headImgUrl,
 			b.mobile,
 			0 totalIn,
-			0 totalAttendance,
-			0 totalNoAttendance,
+			(SELECT count(1) FROM match_join_user WHERE user_id = a.user_id AND status = 1) totalAttendance,
 			a.job,
 			a.position
 		FROM
@@ -456,11 +550,39 @@
 	</update>
 	
 	<select id="teamAlbumList" resultType="java.util.Map">
-		TODO
+		SELECT
+			DATE(create_time) dateTime,
+			GROUP_CONCAT(file_path) imgPath
+		FROM
+			match_schedule_file
+		WHERE
+			file_type = 2
+		AND team_info_id = #{teamId}
+		AND del_flag = 1
+		GROUP BY
+			DATE(create_time)
 	</select>
 	
 	<select id="albumList" resultType="java.util.Map">
-		TODO
+		SELECT
+			DATE(a.create_time) dateTime,
+			GROUP_CONCAT(a.file_path) imgPath
+		FROM
+			match_schedule_file a,
+			team_member b
+		WHERE
+			a.file_type = 2
+		AND a.team_info_id = b.team_info_id
+		AND b.user_id = #{userId}
+		AND a.del_flag = 1
+		<if test='startDate != null'>
+			AND DATE(a.create_time) &gt;= #{startDate}
+		</if>
+		<if test='endDate != null'>
+			AND DATE(a.create_time) &lt;= #{endDate}
+		</if>
+		GROUP BY
+			DATE(a.create_time)
 	</select>
 	
 	<!-- ==============================================商品订单相关============================================================= -->
@@ -588,5 +710,33 @@
 		AND a.user_id = #{userId}
 		AND a.type = 3
 		AND a.status = 1
+	</select>
+	
+	<!-- ==============================================我的游戏============================================================= -->
+	<select id="gamelist" resultType="java.util.Map">
+		SELECT
+			a.game_name gameName,
+			DATE_FORMAT(a.game_time,'%Y-%m-%d %T') gameTime,
+			a.team1_name teamNameA,
+			a.team1_logo teamLogoA,
+			IFNULL(a.result_team1,'') teamScoreA,
+			a.team2_name teamNameB,
+			a.team2_logo teamLogoB,
+			IFNULL(a.result_team2,'') teamScoreB,
+			DATE_FORMAT(b.create_time,'%Y-%m-%d %T') buyTime,
+			IF(b.status = 1,b.estimate-b.amount,IF(b.status = 3,-b.amount,0)) profit,
+			b.status,
+			CASE b.status
+				WHEN 0 THEN '未开奖' 
+				WHEN 1 THEN '中奖' 
+				WHEN 2 THEN '走盘' 
+				WHEN 3 THEN '未中奖' 
+			END statusStr
+		FROM
+			competition_game a,
+			competition_game_buy_info b
+		WHERE
+			a.competition_game_id = b.competition_game_id
+		AND b.user_id = #{userId}
 	</select>
 </mapper>

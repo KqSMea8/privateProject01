@@ -128,16 +128,16 @@
 	<insert id="userRecharge">
 		INSERT INTO user_recharge (
 			user_id,
+			type,
 			recharge_amount,
-			diamonds_amount,
-			proportion
+			diamonds_amount
 		)
 		VALUES
 			(
 				#{userId},
+				1,
 				#{cashTotal},
-				#{rechargeTotal},
-				CONCAT(#{cashTotal}, ':', FORMAT(#{rechargeTotal} / #{cashTotal}, 0))
+				#{rechargeTotal}
 			)
 	</insert>
 	

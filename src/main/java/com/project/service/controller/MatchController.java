@@ -86,6 +86,8 @@ public class MatchController extends BaseController {
 		return matchService.matchApply(getUserByToken(token), getJSONObjectParams(params));
 	}
 
+	// ==============================================播报相关==================================================
+
 	/*
 	 * 播报实况页面可选信息
 	 */
@@ -110,5 +112,85 @@ public class MatchController extends BaseController {
 	@RequestMapping(value = "/matchinfo/eventrealitylist", method = RequestMethod.POST)
 	public BaseResult eventrealityList(String params) {
 		return matchService.eventrealityList(getJSONObjectParams(params));
+	}
+
+	// ==============================================赛事详情下半部分==================================================
+
+	/*
+	 * 赛事详情-下半部-参赛球队列表
+	 */
+	@RequestMapping(value = "/matchinfo/teamlist", method = RequestMethod.POST)
+	public BaseResult teamList(String params) {
+		return matchService.teamList(getJSONObjectParams(params));
+	}
+
+	/*
+	 * 赛事详情-下半部-积分榜列表
+	 */
+	@RequestMapping(value = "/matchinfo/scorelist", method = RequestMethod.POST)
+	public BaseResult scorelist(String params) {
+		return matchService.scorelist(getJSONObjectParams(params));
+	}
+
+	/*
+	 * 赛事详情-下半部-赛程列表
+	 */
+	@RequestMapping(value = "/matchinfo/schedule/list", method = RequestMethod.POST)
+	public BaseResult scheduleList(String params) {
+		return matchService.scheduleList(getJSONObjectParams(params));
+	}
+
+	/*
+	 * 下半部-赛程列表-球员榜列表
+	 */
+	@RequestMapping(value = "/matchinfo/member/list", method = RequestMethod.POST)
+	public BaseResult memberList(String params) {
+		return matchService.memberList(getJSONObjectParams(params));
+	}
+
+	/*
+	 * 下半部-赛程列表-对方球员资料详情
+	 */
+	@RequestMapping(value = "/matchinfo/member/info", method = RequestMethod.POST)
+	public BaseResult memberInfo(String token, String params) {
+		return matchService.memberInfo(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	// ==============================================裁判设置阵型相关==================================================
+
+	/*
+	 * 下半部-阵型设置-页面信息获取
+	 */
+	@CheckToken
+	@RequestMapping(value = "/matchinfo/formationinfo", method = RequestMethod.POST)
+	public BaseResult formationInfo(@CheckParam() String token, String params) {
+		return matchService.formationInfo(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/*
+	 * 下半部-阵型设置-页面信息获取
+	 */
+	@CheckToken
+	@RequestMapping(value = "/matchinfo/saveformation", method = RequestMethod.POST)
+	public BaseResult saveFormation(@CheckParam() String token, String params) {
+		return matchService.saveFormation(getUserByToken(token), params);
+	}
+
+	/*
+	 * 下半部-阵型设置-页面信息获取
+	 */
+	@CheckToken
+	@RequestMapping(value = "/matchinfo/formationinfoleader", method = RequestMethod.POST)
+	public BaseResult formationInfoLeader(@CheckParam() String token, String params) {
+		return matchService.formationInfoLeader(getUserByToken(token), getJSONObjectParams(params));
+	}
+
+	/*
+	 * 下半部-阵型设置-页面信息获取
+	 */
+	@CheckToken
+	@RequestMapping(value = "/matchinfo/saveformationleader", method = RequestMethod.POST)
+	public BaseResult saveFormationLeader(@CheckParam() String token, String params) {
+		return matchService.saveFormationLeader(getUserByToken(token), params);
 	}
 }

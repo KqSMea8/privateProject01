@@ -84,8 +84,29 @@
 	
 	<select id="marchRuningInfo" resultType="java.util.Map">
 		SELECT
-			IF(FIND_IN_SET(#{userId},a.referee_info),1,IF(FIND_IN_SET(#{userId},a.event_reality_info),2,0)) userRole,
-			a.match_schedule_id matchScheduleId,
+			a.match_schedule_id scheduleId,
+			IF(
+				FIND_IN_SET(#{userId},a.referee_info),
+				1,
+				IF(
+					FIND_IN_SET(#{userId},a.event_reality_info),
+					2,
+					IF(
+						(
+							SELECT
+								count(b.team_member_id) > 0
+							FROM
+								team_member b
+							WHERE
+								(a.team_info_id1 = b.team_info_id OR a.team_info_id2 = b.team_info_id )
+							AND a.match_schedule_id = a.match_schedule_id
+							AND b.user_id = #{userId}
+							AND role_type IN (1, 4)
+						)
+						,3,0
+					)
+				)
+			) userRole,
 			b.team_info_id teamidA,
 			b.team_name teamNameA,
 			b.team_logo teamLogoA,
@@ -108,7 +129,7 @@
 		AND a.team_info_id2 = c.team_info_id
 		AND a.schedule_result is NULL
 		AND a.schedule_start_time &lt; NOW()
-		AND a.match_info_id = = #{matchInfoId}
+		AND a.match_info_id = #{matchInfoId}
 	</select>
 	
 	<select id="matchinfoImagelist" resultType="java.lang.String">
@@ -194,6 +215,17 @@
 			match_schedule_file_id = #{videoId}
 	</insert>
 	
+	<select id="isHaveApply" resultType="java.lang.Boolean">
+		SELECT
+			COUNT(1)>0
+		FROM 
+			match_join_team
+		WHERE 
+			match_info_id = #{teamId}
+		AND team_info_id = #{matchInfoId}
+		AND status != 2
+	</select>
+	
 	<insert id="matchApply">
 		INSERT INTO match_join_team (
 			match_info_id,
@@ -210,8 +242,25 @@
 			)
 	</insert>
 	
+	<!-- ==============================================播报相关================================================== -->
+	
 	<select id="getMemberList" resultType="java.util.Map">
-		TODO
+		SELECT
+			b.team_member_id teamMemberId,
+			c.name teamMemberName,
+			d.headimgurl headImgUrl
+		FROM
+			match_schedule a,
+			match_join_user b,
+			USER c,user_wx d
+		WHERE
+			a.match_info_id = b.match_info_id
+		AND b.user_id = c.user_id
+		AND c.user_id = d.user_id
+		AND a.match_schedule_id = #{matchScheduleId}
+		AND b.team_info_id = #{teamId}
+		AND b.status = 0
+		AND c.status = 1
 	</select>
 	
 	<insert id="addEventreality">
@@ -219,6 +268,379 @@
 	</insert>
 	
 	<select id="eventRealityList" resultType="java.util.Map">
-		TODO
+		SELECT
+			a.stage_type contentType,
+			(SELECT title FROM class WHERE id = a.stage_type) contentTypeStr,
+			a.content,
+			a.imgs imgUrl,
+			DATE_FORMAT(a.create_time,'%Y-%m-%d %T')
+		FROM
+			match_schedule_stage a
+		WHERE a.match_schedule_id = #{matchScheduleId}
+		ORDER BY
+			create_time DESC
 	</select>
+	
+	<!-- ==============================================赛事详情下半部分================================================== -->
+	
+	<select id="teamList" resultType="java.util.Map">
+		SELECT
+			b.team_info_id teamId,
+			b.team_name teamName,
+			b.team_logo logoPath,
+			CONCAT(IFNULL(b.city_name,''),IFNULL(b.district_name,'')) region
+		FROM
+			match_join_team a,
+			team_info b
+		WHERE
+			a.team_info_id = b.team_info_id
+		AND a.status = 1
+		AND b.status = 1
+		AND a.match_info_id = #{matchInfoId}
+	</select>
+	
+	<select id="scorelist" resultType="java.util.Map">
+		SELECT
+			b.team_info_id teamId,
+			b.team_name teamName,
+			b.team_logo logoPath,
+			a.show_num totalGame,
+			a.win_num totalWin,
+			a.draw_num totalDraw,
+			a.lose_num totalLose,
+			CONCAT(a.goal_num,'/',a.lost_num) inAndOut,
+			a.score score
+		FROM
+			match_join_team a,
+			team_info b
+		WHERE
+			a.team_info_id = b.team_info_id
+		AND a.status = 1
+		AND b.status = 1
+		AND a.match_info_id = #{matchInfoId}
+		ORDER BY
+			a.score DESC
+	</select>
+	
+	<select id="scheduleList" resultType="java.util.Map">
+		SELECT
+			a.match_schedule_id scheduleId,
+			b.team_info_id teamidA,
+			b.team_name teamNameA,
+			b.team_logo teamLogoA,
+			IFNULL(a.score1, 0) scoreA,
+			c.team_info_id teamidB,
+			c.team_name teamNameB,
+			c.team_logo teamLogoB,
+			IFNULL(a.score2, 0) scoreB,
+			DATE_FORMAT(a.schedule_start_time,'%Y-%m-%d %T') time,
+			CASE WHEN NOW()> a.schedule_start_time AND a.status = 1 THEN 2 ELSE a.status END status 
+		FROM
+			match_schedule a,
+			team_info b,
+			team_info c
+		WHERE
+			a.team_info_id1 = b.team_info_id
+		AND a.team_info_id2 = b.team_info_id
+		AND a.status != 0
+		AND b.status = 1
+		AND c.status = 1
+		AND a.match_schedule_id = #{matchInfoId}
+	</select>
+	
+	<select id="memberList" resultType="java.util.Map">
+		SELECT
+			b.team_info_id teamId,
+			b.team_name teamName,
+			b.team_logo teamLogo,
+			c.team_member_id teamMemberId,
+			(SELECT name FROM user WHERE user_id = c.user_id) memberName,
+			a.total_goal totalIn,
+			a.total_red_card totalRed,
+			a.total_yellow_card totalYellow,
+			a.total_assistant_ngineer totalAssists
+		FROM
+			match_schedule_player_situation a,
+			team_info b,
+			team_member c
+		WHERE
+			a.team_id = b.team_info_id
+		AND a.team_member_id = c.team_member_id
+		AND b.status = 1
+		AND c.audit_status = 1
+		AND a.match_info_id = #{matchInfoId}
+		ORDER BY
+			<if test="type == 1">
+				a.total_goal DESC
+			</if>
+			<if test="type == 2">
+				a.total_red_card DESC,a.total_yellow_card DESC
+			</if>
+			<if test="type == 3">
+				a.total_assistant_ngineer DESC
+			</if>
+	</select>
+	
+	<select id="memberInfo" resultType="java.util.Map">
+		SELECT 
+			a.team_member_id teamMemberId,
+			(SELECT count(1)>1 FROM follow WHERE user_id = #{userId} AND type = 3 AND follow_info_id = a.user_id) isFollow,
+			b.name userName,
+			c.headimgurl headImgUrl,
+			b.mobile,
+			b.height,
+			b.weight,
+			CASE b.sex WHEN 0 THEN '保密' WHEN 1 THEN '女' WHEN 2 THEN '男' END sex,
+			TIMESTAMPDIFF(YEAR, b.birthday, NOW()) age
+		FROM
+			team_member a,
+			USER b,
+			user_wx c
+		WHERE 
+			a.team_member_id = #{teamMemberId}
+		AND a.user_id = b.user_id
+		AND b.user_id = c.user_id 
+		LIMIT 1
+	</select>
+	
+	<select id="memberInfoCount" resultType="java.util.Map">
+		SELECT
+			COUNT(DISTINCT match_schedule_id),
+			IFNULL(SUM(total_goal),0) totalIn,
+			IFNULL(SUM(total_assistant_ngineer),0) totalAssistant
+		FROM
+			match_schedule_player_situation
+		WHERE
+			team_member_id = #{teamMemberId}
+	</select>
+	
+	<select id="memberTeamList" resultType="java.util.Map">
+		SELECT
+			a.team_info_id teamId,
+			a.team_name teamName,
+			a.team_logo teamLogo
+		FROM
+			team_info a
+		WHERE
+			EXISTS (
+				SELECT
+					x.team_member_id
+				FROM
+					team_member x,
+					team_member y
+				WHERE
+					a.team_info_id = x.team_info_id
+				AND x.user_id = y.user_id
+				AND x.audit_status = 1
+				AND y.team_member_id = #{teamMemberId}
+			)
+	</select>
+	
+	<!-- ==============================================裁判设置阵型相关================================================== -->
+	
+	<select id="formationInfo" resultType="java.util.Map">
+		SELECT
+			a.match_schedule_id scheduleId,
+			b.team_info_id teamidA,
+			b.team_name teamNameA,
+			b.team_logo teamLogoA,
+			a.score1 scoreA,
+			<if test="type == null">
+				a.ersey_color1 colorOfJerseyA,
+				a.nants_color1 colorOfNantsA,
+				a.socks_color1 colorOfSocksA,
+				a.formation1 formationA,
+				a.ersey_color2 colorOfJerseyB,
+				a.nants_color2 colorOfNantsB,
+				a.socks_color2 colorOfSocksB,
+				a.formation2 formationB,
+			</if>
+			<if test="type != null and type == 1">
+				a.ersey_color1 colorOfJersey,
+				a.nants_color1 colorOfNants,
+				a.socks_color1 colorOfSocks,
+				a.formation1 formation,
+			</if>
+			<if test="type != null and type == 2">
+				a.ersey_color2 colorOfJersey,
+				a.nants_color2 colorOfNants,
+				a.socks_color2 colorOfSocks,
+				a.formation2 formation,
+			</if>
+			c.team_info_id teamidB,
+			c.team_name teamNameB,
+			c.team_logo teamLogoB,
+			a.score2 scoreB,
+			a.address,
+			(SELECT GROUP_CONCAT(name) FROM user WHERE FIND_IN_SET(user_id, a.video_info)) memberOfVideo,
+			(SELECT GROUP_CONCAT(name) FROM user WHERE FIND_IN_SET(user_id, a.referee_info)) memberOfReferee,
+			(SELECT GROUP_CONCAT(name) FROM user WHERE FIND_IN_SET(user_id, a.event_reality_info)) memberOfEventReality,
+			(SELECT GROUP_CONCAT(name) FROM user WHERE FIND_IN_SET(user_id, a.committee_info)) memberOfCommittee
+		FROM 
+			match_schedule a,
+			team_info b,
+			team_info c
+		WHERE
+			a.team_info_id1 = b.team_info_id
+		AND a.team_info_id2 = c.team_info_id
+		AND a.match_schedule_id = #{scheduleId}
+	</select>
+	
+	<select id="firstMemberList" resultType="java.util.Map">
+		SELECT
+			e.team_member_id teamMemberId,
+			c.name memberName,
+			d.headimgurl headImgUrl
+		FROM
+			match_schedule a,
+			match_schedule_player_situation b,
+			USER c,
+			user_wx d,
+			team_member e
+		WHERE
+			a.match_schedule_id = b.match_schedule_id
+		<if test="type == 1">
+			AND a.team_info_id1 = b.team_member_id
+		</if>
+		<if test="type == 2">
+			AND a.team_info_id2 = b.team_member_id
+		</if>
+		AND b.team_member_id = e.team_member_id
+		AND e.user_id = c.user_id
+		AND c.user_id = d.user_id
+		AND a.match_schedule_id = #{scheduleId}
+	</select>
+	
+	<select id="substitutesMemberList" resultType="java.util.Map">
+		SELECT
+			e.team_member_id teamMemberId,
+			c.name memberName,
+			d.headimgurl headImgUrl
+		FROM
+			match_schedule a,
+			match_join_user b,
+			USER c,
+			user_wx d,
+			team_member e
+		WHERE
+			a.match_info_id = b.match_info_id
+		<if test="type == 1">
+			AND a.team_info_id1 = b.team_member_id
+		</if>
+		<if test="type == 2">
+			AND a.team_info_id2 = b.team_member_id
+		</if>
+		AND b.team_member_id = e.team_member_id
+		AND e.user_id = c.user_id
+		AND c.user_id = d.user_id
+		AND b.team_member_id NOT IN (
+			SELECT
+				team_member_id
+			FROM
+				match_schedule_player_situation
+			WHERE
+				match_schedule_id = a.match_schedule_id
+			<if test="type == 1">
+				AND team_info_id1 = a.team_info_id1
+			</if>
+			<if test="type == 2">
+				AND team_info_id1 = a.team_info_id2
+			</if>
+		)
+		AND a.match_schedule_id = #{scheduleId}
+	</select>
+	
+	<update id="saveFormation">
+		UPDATE 
+			match_schedule
+		SET 
+		 	formation1 = #{paramEntity.formationA},
+		 	ersey_color1 = #{paramEntity.colorOfJerseyA},
+		 	nants_color1 = #{paramEntity.colorOfNantsA},
+		 	socks_color1 = #{paramEntity.colorOfSocksA},
+		 	formation2 = #{paramEntity.formationB},
+		 	ersey_color2 = #{paramEntity.colorOfJerseyB},
+		 	nants_color2 = #{paramEntity.colorOfNantsB},
+		 	socks_color2 = #{paramEntity.colorOfSocksB},
+		WHERE
+			match_schedule_id = #{paramEntity.scheduleId}
+	</update>
+	
+	<update id="deleteFirstMemberList">
+		UPDATE 
+			match_schedule a,match_schedule_player_situation b
+		SET 
+			b.status = 0
+		WHERE
+			<if test="type == 1">
+				a.team_info_id1 = b.team_id
+			</if>
+			<if test="type == 2">
+				a.team_info_id2 = b.team_id
+			</if>
+		AND a.match_schedule_id = b.match_schedule_id
+		AND a.match_schedule_id = #{paramEntity.scheduleId}
+	</update>
+	
+	<insert id="saveFirstMemberList">
+		INSERT match_schedule_player_situation (
+			match_info_id,
+			match_schedule_id,
+			team_id,
+			team_member_id,
+			formation,
+			user_id
+		) SELECT
+			a.match_info_id,
+			a.match_schedule_id,
+			b.team_info_id,
+			b.team_member_id,
+			#{formation},
+			#{userId}
+		FROM
+			match_schedule a,
+			team_member b
+		WHERE
+			<if test="type == 1">
+				a.team_info_id1 = b.team_info_id
+			</if>
+			<if test="type == 2">
+				a.team_info_id2 = b.team_info_id
+			</if>
+		AND a.match_schedule_id = #{scheduleId}
+		AND b.team_member_id IN (${firstMemberStr})
+	</insert>
+	
+	<select id="getType" resultType="java.lang.Integer">
+		SELECT
+			IF(count(b.team_member_id) > 0,1,2)
+		FROM
+			match_schedule a,
+			team_member b
+		WHERE
+			a.team_info_id1 = b.team_info_id
+		AND a.match_schedule_id = #{scheduleId}
+		AND b.user_id = #{userId}
+		AND role_type IN (1, 4)
+	</select>
+	
+	<update id="saveFormationLeader">
+		UPDATE 
+			match_schedule
+		SET 
+			<if test="type == 1">
+			 	formation1 = #{paramEntity.formation},
+			 	ersey_color1 = #{paramEntity.colorOfJersey},
+			 	nants_color1 = #{paramEntity.colorOfNants},
+			 	socks_color1 = #{paramEntity.colorOfSocks},
+		 	</if>
+			<if test="type == 1">
+			 	formation2 = #{paramEntity.formation},
+			 	ersey_color2 = #{paramEntity.colorOfJersey},
+			 	nants_color2 = #{paramEntity.colorOfNants},
+			 	socks_color2 = #{paramEntity.colorOfSocks},
+		 	</if>
+		WHERE
+			match_schedule_id = #{paramEntity.scheduleId}
+	</update>
 </mapper>

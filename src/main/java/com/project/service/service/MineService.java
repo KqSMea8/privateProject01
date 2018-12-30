@@ -1,5 +1,8 @@
 package com.project.service.service;
 
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,9 +12,9 @@ import org.springframework.stereotype.Service;
 import com.project.common.base.BaseResult;
 import com.project.common.base.BaseService;
 import com.project.common.page.PageForApp;
-import com.project.common.util.StringUtil;
 import com.project.service.entity.User;
 import com.project.service.proxy.MineProxy;
+import com.project.service.proxy.PlatformProxy;
 import com.project.service.reqentity.receive.ReceiveSaveReqEntity;
 import com.project.service.reqentity.team.TeamSaveReqEntity;
 import com.project.service.reqentity.user.UserSaveReqEntity;
@@ -20,12 +23,24 @@ import net.sf.json.JSONObject;
 
 @Service("mineService")
 public class MineService extends BaseService {
+
 	@Autowired
 	private MineProxy mineProxy;
+
+	@Autowired
+	private PlatformProxy platformProxy;
 
 	// ==============================================用户相关=============================================================
 	public BaseResult center(User user) {
 		try {
+			haveAllSaveRechargeDiamonds(user);
+
+			// 每年生日+0.5钻石
+			if (new SimpleDateFormat("MM-dd").format(new Date()).equals(user.getBirthday().substring(5))) {
+				BigDecimal rechargeTotal = new BigDecimal("0.5");
+				boolean result = platformProxy.userRecharge(rechargeTotal, user.getUserId(), 3).intValue() == 1;
+				result = result && platformProxy.diamondsRecharge(rechargeTotal, user.getUserId()).intValue() == 1;
+			}
 			return successResult("获取成功", mineProxy.getCenterInfo(user.getUserId()));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -56,6 +71,7 @@ public class MineService extends BaseService {
 
 		try {
 			if (mineProxy.updateUserInfo(paramEntity).intValue() == 1) {
+				haveAllSaveRechargeDiamonds(user);
 				return successResult("设置成功");
 			} else {
 				return successResult("设置失败");
@@ -77,6 +93,7 @@ public class MineService extends BaseService {
 
 		try {
 			if (mineProxy.userUpdateHeadImage(headImgUrl, user.getUserId()).intValue() == 1) {
+				haveAllSaveRechargeDiamonds(user);
 				return successResult("设置成功");
 			} else {
 				return successResult("设置失败");
@@ -89,29 +106,31 @@ public class MineService extends BaseService {
 
 	public BaseResult userUpdateMobile(User user, JSONObject params) {
 		String mobile;
-		String code;
-		String validateType;
+//		String code;
+//		String validateType;
 		try {
 			mobile = params.getString("mobile");
-			code = params.getString("code");
-			validateType = params.getString("validateType");
-			if (StringUtil.isEmpty(mobile) || StringUtil.isEmpty(code) || StringUtil.isEmpty(validateType)) {
-				return successResult("参数短缺");
-			}
+//			code = params.getString("code");
+//			validateType = params.getString("validateType");
+//			if (StringUtil.isEmpty(mobile) || StringUtil.isEmpty(code) || StringUtil.isEmpty(validateType)) {
+//				return successResult("参数短缺");
+//			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorParamsResult();
 		}
 
 		try {
-			String vcode = redisUtil.get(validateType + mobile);
-			if (StringUtil.isEmpty(vcode)) {
-				return successResult("验证码过期");
-			}
-			if (!vcode.equals(code)) {
-				return successResult("验证码不正确");
-			}
+			// 由于短信机未购买，暂时先不验证
+//			String vcode = redisUtil.get(validateType + mobile);
+//			if (StringUtil.isEmpty(vcode)) {
+//				return successResult("验证码过期");
+//			}
+//			if (!vcode.equals(code)) {
+//				return successResult("验证码不正确");
+//			}
 			if (mineProxy.userUpdateMobile(mobile, user.getUserId()).intValue() == 1) {
+				haveAllSaveRechargeDiamonds(user);
 				return successResult("绑定成功");
 			} else {
 				return successResult("绑定失败");
@@ -142,6 +161,14 @@ public class MineService extends BaseService {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorExceptionResult();
+		}
+	}
+
+	private void haveAllSaveRechargeDiamonds(User user) {
+		if (mineProxy.isHaveAllSave(user.getUserId())) {
+			BigDecimal rechargeTotal = new BigDecimal("5");
+			boolean result = platformProxy.userRecharge(rechargeTotal, user.getUserId(), 5).intValue() == 1;
+			result = result && platformProxy.diamondsRecharge(rechargeTotal, user.getUserId()).intValue() == 1;
 		}
 	}
 	// ==============================================收货地址相关=============================================================
@@ -212,6 +239,7 @@ public class MineService extends BaseService {
 			boolean result = false;
 			if (paramEntity.getTeamId() == null) {
 				result = mineProxy.createTeam(paramEntity, user).intValue() == 1;
+				result = result && mineProxy.teamMemberApply(paramEntity.getTeamId(), user.getUserId(), 1).intValue() == 1;
 			} else {
 				result = mineProxy.updateTeam(paramEntity, user).intValue() == 1;
 			}
@@ -236,14 +264,37 @@ public class MineService extends BaseService {
 		}
 
 		try {
-			Map<String, Object> result = mineProxy.teamInfo(teamId);
+			Map<String, Object> result = mineProxy.teamInfo(teamId, user == null ? 0 : user.getUserId());
 			result.putAll(mineProxy.getTeamCount(teamId));// 获取统计数据
-			result.put("matchScheduleInfo", mineProxy.matchScheduleInfo(teamId));
-			// TODO 注意查询 signUpTotal和signUpStatus的值
-			Integer roleType = user == null ? 0 : 1;// TODO 注意判断当前用户的权限
-			result.put("roleType", roleType);
-
+			result.put("matchScheduleInfo", mineProxy.matchScheduleInfo(teamId, user == null ? 0 : user.getUserId()));
 			return successResult("获取成功", result);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult teamMemberApply(User user, JSONObject params) {
+		Integer teamId;
+		try {
+			teamId = params.getInt("teamId");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			Integer applyAuditStatus = mineProxy.getApplyAuditStatus(teamId, user.getUserId());
+			if (applyAuditStatus == null || applyAuditStatus.intValue() > 1) {
+				mineProxy.teamMemberApply(teamId, user.getUserId(), 0);
+				return successResult("申请成功");
+			} else {
+				if (applyAuditStatus.intValue() == 0) {
+					return errorResult("您已经申请了该球队,请耐心等待审核!");
+				} else {
+					return errorResult("您已经该球队队员了,不能重复申请!");
+				}
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorExceptionResult();
@@ -262,7 +313,15 @@ public class MineService extends BaseService {
 		}
 
 		try {
-			Map<String, Object> result = mineProxy.teamInfoMore(teamId, year);// TODO peopleAverage, matchAverage 未统计
+			Map<String, Object> result = mineProxy.teamInfoMore(teamId, year);
+			Integer totalJoinUser = mineProxy.totalJoinUser(teamId, year);
+
+			BigDecimal totalGame = new BigDecimal(result.get("totalGame").toString());
+			BigDecimal totalPeople = new BigDecimal(totalJoinUser);
+
+			result.put("peopleAverage", totalPeople.compareTo(BigDecimal.ZERO) == 0 ? 0 : totalGame.divide(totalPeople, 2, BigDecimal.ROUND_HALF_UP));// 人均场数
+			result.put("matchAverage", totalGame.compareTo(BigDecimal.ZERO) == 0 ? 0 : totalPeople.divide(totalGame, 2, BigDecimal.ROUND_HALF_UP));// 场均人数
+
 			result.put("matchScheduleList", mineProxy.matchScheduleList(teamId, year));
 			return successResult("获取成功", result);
 		} catch (Exception e) {
@@ -285,10 +344,33 @@ public class MineService extends BaseService {
 
 		try {
 			Map<String, Object> result = new HashMap<String, Object>();
-			result.put("isOperator", 1);// TODO 这里根据规则展示是不是有权限操作相关内容
+			result.put("roleType", mineProxy.getRoleType(teamId, user == null ? 0 : user.getUserId()));
 			result.put("applyUserList", mineProxy.applyUserList(teamId));
 			result.put("memberList", mineProxy.memberList(teamId, order, sort));
 			return successResult("获取成功", result);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult settingRole(User user, JSONObject params) {
+		Integer teamMemberId, roleType;
+		try {
+			teamMemberId = params.getInt("teamMemberId");
+			roleType = params.getInt("roleType");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			if (mineProxy.settingRole(teamMemberId, roleType).intValue() == 1) {
+				return successResult("操作成功");
+			} else {
+				return errorResult("操作失败");
+			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorExceptionResult();
@@ -324,7 +406,7 @@ public class MineService extends BaseService {
 
 		try {
 			Map<String, Object> result = mineProxy.teamMemberInfo(teamMemberId);
-			// TODO totalIn,totalAttendance，totalNoAttendance未统计
+			// TODO totalIn未统计
 			return successResult("获取成功", result);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -488,6 +570,25 @@ public class MineService extends BaseService {
 		}
 		try {
 			return successResult("获取成功", mineProxy.followMemberlist(page, user.getUserId()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+	// ==============================================我的游戏=============================================================
+
+	public BaseResult gamelist(User user, JSONObject params) {
+		PageForApp page = null;
+		Integer status;
+		try {
+			page = getPageEntity(params);
+			status = params.getInt("status");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+		try {
+			return successResult("获取成功", mineProxy.gamelist(page, status, user.getUserId()));
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorExceptionResult();

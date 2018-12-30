@@ -4,15 +4,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import com.project.common.base.BaseResult;
 import com.project.common.base.BaseService;
 import com.project.common.page.PageForApp;
+import com.project.common.util.StringUtil;
 import com.project.service.entity.User;
 import com.project.service.proxy.MatchProxy;
 import com.project.service.reqentity.match.AddEventrealityReqEntity;
 import com.project.service.reqentity.match.MatchSelectReqEntity;
+import com.project.service.reqentity.match.SaveFormationLeaderReqEntity;
+import com.project.service.reqentity.match.SaveFormationReqEntity;
 
 import net.sf.json.JSONObject;
 
@@ -21,6 +27,9 @@ public class MatchService extends BaseService {
 
 	@Autowired
 	private MatchProxy matchProxy;
+
+	@Autowired
+	private DataSourceTransactionManager transactionManager;
 
 	public BaseResult matchlist(String paramsStr) {
 		MatchSelectReqEntity paramEntity;
@@ -189,16 +198,23 @@ public class MatchService extends BaseService {
 		}
 
 		try {
+			if (matchProxy.isHaveApply(teamId, matchInfoId)) {
+				return errorResult("已经申请过,请耐心等待审核!");
+			}
+
 			if (matchProxy.matchApply(teamId, matchInfoId, contacts, contactsTel).intValue() == 1) {
-				return successResult("评论成功");
+				// 后台审核通过后将人员球队人员加入match_join_user表 TODO 后台功能
+				return successResult("申请成功");
 			} else {
-				return errorResult("评论失败");
+				return errorResult("申请失败");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorExceptionResult();
 		}
 	}
+
+	// ==============================================播报相关==================================================
 
 	public BaseResult eventrealityInfo(User user, JSONObject params) {
 		Integer matchInfoId;
@@ -213,10 +229,10 @@ public class MatchService extends BaseService {
 			Map<String, Object> result = matchProxy.marchRuningInfo(matchInfoId, user.getUserId());
 			Integer matchScheduleId = Integer.parseInt(result.get("matchScheduleId").toString());
 
-			Integer teamIdA = Integer.parseInt(result.get("teamIdA").toString());
-			result.put("memberListA", matchProxy.getMemberList(teamIdA, matchScheduleId));
-			Integer teamIdB = Integer.parseInt(result.get("teamIdB").toString());
-			result.put("memberListA", matchProxy.getMemberList(teamIdB, matchScheduleId));
+			result.put("teamAFirstMemberList", matchProxy.firstMemberList(matchScheduleId, 1));
+			result.put("teamASubstitutesMemberList", matchProxy.substitutesMemberList(matchScheduleId, 1));
+			result.put("teamBFirstMemberList", matchProxy.firstMemberList(matchScheduleId, 2));
+			result.put("teamBSubstitutesMemberList", matchProxy.substitutesMemberList(matchScheduleId, 2));
 
 			return successResult("获取成功", result);
 		} catch (Exception e) {
@@ -238,6 +254,9 @@ public class MatchService extends BaseService {
 		}
 
 		try {
+			//进球(42, "进球"), 黄牌(43, "黄牌"), 换人(45, "换人"), 红牌(44, "红牌"), 点球(60, "点球"), 射门(54, "射门"), 助攻(55, "助攻"), 规则牌(101, "规则牌");
+			
+			//根据类型不同，进行不同的操作 TODO
 			if (matchProxy.addEventreality(paramEntity, user).intValue() == 1) {
 				return successResult("播报成功");
 			} else {
@@ -266,6 +285,234 @@ public class MatchService extends BaseService {
 			return successResult("获取成功", result);
 		} catch (Exception e) {
 			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	// ==============================================赛事详情下半部分==================================================
+
+	public BaseResult teamList(JSONObject params) {
+		Integer matchInfoId;
+		try {
+			matchInfoId = params.getInt("matchInfoId");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			return successResult("获取成功", matchProxy.teamList(matchInfoId));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult scorelist(JSONObject params) {
+		Integer matchInfoId;
+		try {
+			matchInfoId = params.getInt("matchInfoId");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			return successResult("获取成功", matchProxy.scorelist(matchInfoId));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult scheduleList(JSONObject params) {
+		Integer matchInfoId, roundNumber;
+		String date;
+		try {
+			matchInfoId = params.getInt("matchInfoId");
+			roundNumber = params.get("roundNumber") == null ? null : params.getInt("roundNumber");
+			date = params.get("date") == null ? null : params.getString("date");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			return successResult("获取成功", matchProxy.scheduleList(matchInfoId, roundNumber, date));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult scheduleReview(JSONObject params) {
+		Integer matchInfoId, roundNumber;
+		String date;
+		try {
+			matchInfoId = params.getInt("matchInfoId");
+			roundNumber = params.get("roundNumber") == null ? null : params.getInt("roundNumber");
+			date = params.get("date") == null ? null : params.getString("date");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			return successResult("获取成功", matchProxy.scheduleList(matchInfoId, roundNumber, date));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult memberList(JSONObject params) {
+		Integer matchInfoId, type;
+		try {
+			matchInfoId = params.getInt("matchInfoId");
+			type = params.getInt("type");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			return successResult("获取成功", matchProxy.memberList(matchInfoId, type));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult memberInfo(User user, JSONObject params) {
+		Integer teamMemberId;
+		try {
+			teamMemberId = params.getInt("teamMemberId");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			Map<String, Object> result = matchProxy.memberInfo(teamMemberId, user == null ? 0 : user.getUserId());
+			result.putAll(matchProxy.memberInfoCount(teamMemberId));
+			result.put("signTeamList", matchProxy.memberTeamList(teamMemberId));
+			return successResult("获取成功", result);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+	// ==============================================裁判设置阵型相关==================================================
+
+	public BaseResult formationInfo(User user, JSONObject params) {
+		Integer scheduleId;
+		try {
+			scheduleId = params.getInt("scheduleId");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			Map<String, Object> result = matchProxy.formationInfo(scheduleId, null);
+
+			result.put("teamAFirstMemberList", matchProxy.firstMemberList(scheduleId, 1));
+			result.put("teamASubstitutesMemberList", matchProxy.substitutesMemberList(scheduleId, 1));
+			result.put("teamBFirstMemberList", matchProxy.firstMemberList(scheduleId, 2));
+			result.put("teamBSubstitutesMemberList", matchProxy.substitutesMemberList(scheduleId, 2));
+			return successResult("获取成功", result);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult saveFormation(User user, String paramsStr) {
+		SaveFormationReqEntity paramEntity;
+		try {
+			paramEntity = json2Entity(paramsStr, SaveFormationReqEntity.class);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+		TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+		try {
+			boolean flag = false;
+			flag = matchProxy.saveFormation(paramEntity).intValue() == 1;
+
+			if (StringUtil.isNotEmpty(paramEntity.getTeamAFirstMemberStr())) {
+				flag = flag && matchProxy.deleteFirstMemberList(paramEntity.getScheduleId(), 1).intValue() > 0;
+				flag = flag && matchProxy.saveFirstMemberList(paramEntity.getScheduleId(), paramEntity.getFormationA(), paramEntity.getTeamAFirstMemberStr(), 1, user.getUserId()).intValue() > 0;
+			}
+			if (StringUtil.isNotEmpty(paramEntity.getTeamBFirstMemberStr())) {
+				flag = flag && matchProxy.deleteFirstMemberList(paramEntity.getScheduleId(), 2).intValue() > 0;
+				flag = flag && matchProxy.saveFirstMemberList(paramEntity.getScheduleId(), paramEntity.getFormationB(), paramEntity.getTeamBFirstMemberStr(), 2, user.getUserId()).intValue() > 0;
+			}
+			if (flag) {
+				transactionManager.commit(status);
+				return successResult("设置成功");
+			} else {
+				transactionManager.rollback(status);
+				return errorResult("设置失败");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			transactionManager.rollback(status);
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult formationInfoLeader(User user, JSONObject params) {
+		Integer scheduleId;
+		try {
+			scheduleId = params.getInt("scheduleId");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+
+		try {
+			Integer type = matchProxy.getType(scheduleId, user.getUserId());
+			Map<String, Object> result = matchProxy.formationInfo(scheduleId, type);
+
+			result.put("teamFirstMemberList", matchProxy.firstMemberList(scheduleId, type));
+			result.put("teamSubstitutesMemberList", matchProxy.substitutesMemberList(scheduleId, type));
+			return successResult("获取成功", result);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorExceptionResult();
+		}
+	}
+
+	public BaseResult saveFormationLeader(User user, String paramsStr) {
+		SaveFormationLeaderReqEntity paramEntity;
+		try {
+			paramEntity = json2Entity(paramsStr, SaveFormationLeaderReqEntity.class);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return errorParamsResult();
+		}
+		TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
+		try {
+			boolean flag = false;
+			Integer type = matchProxy.getType(paramEntity.getScheduleId(), user.getUserId());
+
+			flag = matchProxy.saveFormationLeader(paramEntity, type).intValue() == 1;
+
+			if (StringUtil.isNotEmpty(paramEntity.getTeamFirstMemberStr())) {
+				flag = flag && matchProxy.deleteFirstMemberList(paramEntity.getScheduleId(), 1).intValue() > 0;
+				flag = flag && matchProxy.saveFirstMemberList(paramEntity.getScheduleId(), paramEntity.getFormation(), paramEntity.getTeamFirstMemberStr(), type, user.getUserId()).intValue() > 0;
+			}
+			if (flag) {
+				transactionManager.commit(status);
+				return successResult("设置成功");
+			} else {
+				transactionManager.rollback(status);
+				return errorResult("设置失败");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			transactionManager.rollback(status);
 			return errorExceptionResult();
 		}
 	}

@@ -2139,7 +2139,6 @@ public class DateUtil extends org.apache.commons.lang.time.DateUtils {
 	/**
 	 * 转换Quartz定时格式
 	 * 
-	 * @author HKCHEN
 	 * @param date
 	 *            字符串，如：2015-12-13 15:20:25
 	 * @return 返回Quartz识别的日期格式，如：25 20 15 13 12 ? 2015
