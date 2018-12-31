@@ -41,7 +41,19 @@ public interface MatchProxy {
 	// ==============================================播报相关==================================================
 	public List<Map<String, Object>> getMemberList(@Param("teamId") Integer teamId, @Param("matchScheduleId") Integer matchScheduleId);
 
+	public AddEventrealityReqEntity setParamEntity(@Param("paramEntity") AddEventrealityReqEntity paramEntity);
+
+	public void updatePlayerSituation(@Param("fieldName") String fieldName, @Param("paramEntity") AddEventrealityReqEntity paramEntity);
+
+	public Integer replaceDown(@Param("paramEntity") AddEventrealityReqEntity paramEntity);
+
+	public Integer replaceUpUpdate(@Param("paramEntity") AddEventrealityReqEntity paramEntity, @Param("userId") Integer userId);
+
+	public Integer replaceUpInsert(@Param("paramEntity") AddEventrealityReqEntity paramEntity, @Param("userId") Integer userId);
+
 	public Integer addEventreality(@Param("paramEntity") AddEventrealityReqEntity paramEntity, @Param("user") User user);
+
+	public Integer addFile(@Param("list") List<AddEventrealityReqEntity> valuse, @Param("userId") Integer userId);
 
 	public List<Map<String, Object>> eventRealityList(@Param("matchScheduleId") Integer matchScheduleId);
 
@@ -74,8 +86,8 @@ public interface MatchProxy {
 	public Integer saveFirstMemberList(@Param("scheduleId") Integer scheduleId, @Param("formation") String formation, @Param("firstMemberStr") String firstMemberStr, @Param("type") Integer type,
 			@Param("userId") Integer userId);
 
-	public Integer getType(@Param("scheduleId")Integer scheduleId, @Param("userId")Integer userId);
+	public Integer getType(@Param("scheduleId") Integer scheduleId, @Param("userId") Integer userId);
 
-	public Integer saveFormationLeader(@Param("paramEntity")SaveFormationLeaderReqEntity paramEntity, @Param("type")Integer type);
+	public Integer saveFormationLeader(@Param("paramEntity") SaveFormationLeaderReqEntity paramEntity, @Param("type") Integer type);
 
 }

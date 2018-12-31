@@ -1,8 +1,11 @@
 package com.project.service.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
@@ -14,6 +17,7 @@ import com.project.common.base.BaseService;
 import com.project.common.page.PageForApp;
 import com.project.common.util.StringUtil;
 import com.project.service.entity.User;
+import com.project.service.enums.EventrealityEnum;
 import com.project.service.proxy.MatchProxy;
 import com.project.service.reqentity.match.AddEventrealityReqEntity;
 import com.project.service.reqentity.match.MatchSelectReqEntity;
@@ -252,18 +256,82 @@ public class MatchService extends BaseService {
 			e.printStackTrace();
 			return errorParamsResult();
 		}
-
+		TransactionStatus ststus = transactionManager.getTransaction(new DefaultTransactionDefinition());
 		try {
-			//进球(42, "进球"), 黄牌(43, "黄牌"), 换人(45, "换人"), 红牌(44, "红牌"), 点球(60, "点球"), 射门(54, "射门"), 助攻(55, "助攻"), 规则牌(101, "规则牌");
-			
-			//根据类型不同，进行不同的操作 TODO
-			if (matchProxy.addEventreality(paramEntity, user).intValue() == 1) {
+			boolean flag = false;
+
+			paramEntity = matchProxy.setParamEntity(paramEntity);
+
+			boolean isNoContent = StringUtil.isEmpty(paramEntity.getContent());
+
+			if (paramEntity.getType().equals(EventrealityEnum.进球.getKeyCode())) {
+
+				matchProxy.updatePlayerSituation("total_goal", paramEntity);
+				if (isNoContent)
+					paramEntity.setContent("【" + paramEntity.getTeamInfoName() + "】队的" + paramEntity.getTeamMemberName() + " 射门进球");
+			} else if (paramEntity.getType().equals(EventrealityEnum.黄牌.getKeyCode())) {
+
+				matchProxy.updatePlayerSituation("total_yellow_card", paramEntity);
+				if (isNoContent)
+					paramEntity.setContent("【" + paramEntity.getTeamInfoName() + "】队的" + paramEntity.getTeamMemberName() + " 被罚黄牌");
+			} else if (paramEntity.getType().equals(EventrealityEnum.红牌.getKeyCode())) {
+
+				matchProxy.updatePlayerSituation("total_red_card", paramEntity);
+				if (isNoContent)
+					paramEntity.setContent("【" + paramEntity.getTeamInfoName() + "】队的" + paramEntity.getTeamMemberName() + " 被罚红牌");
+			} else if (paramEntity.getType().equals(EventrealityEnum.助攻.getKeyCode())) {
+
+				matchProxy.updatePlayerSituation("total_assistant_ngineer", paramEntity);
+				if (isNoContent)
+					paramEntity.setContent("【" + paramEntity.getTeamInfoName() + "】队的" + paramEntity.getTeamMemberName() + " 助攻成功");
+			} else if (paramEntity.getType().equals(EventrealityEnum.换人.getKeyCode())) {
+
+				matchProxy.replaceDown(paramEntity);
+				if(paramEntity.getIsHaveInfo()) {
+					matchProxy.replaceUpUpdate(paramEntity, user.getUserId());
+				}else {
+					matchProxy.replaceUpInsert(paramEntity, user.getUserId());
+				}
+				
+
+				if (isNoContent)
+					paramEntity.setContent("【" + paramEntity.getTeamInfoName() + "】队由替补队员 " + paramEntity.getReplaceTeamMemberName() + "换下场上的" + paramEntity.getTeamMemberName());
+			} else if (paramEntity.getType().equals(EventrealityEnum.射门.getKeyCode())) {
+				if (isNoContent)
+					paramEntity.setContent("【" + paramEntity.getTeamInfoName() + "】队的" + paramEntity.getTeamMemberName() + " 进行射门");
+			} else if (paramEntity.getType().equals(EventrealityEnum.点球.getKeyCode())) {
+				if (isNoContent)
+					paramEntity.setContent("【" + paramEntity.getTeamInfoName() + "】队的" + paramEntity.getTeamMemberName() + " 进行点球");
+			} else if (paramEntity.getType().equals(EventrealityEnum.规则牌.getKeyCode())) {
+				if (isNoContent)
+					paramEntity.setContent("【" + paramEntity.getTeamInfoName() + "】队的" + paramEntity.getTeamMemberName() + " 被罚规则牌");
+			}
+
+			flag = matchProxy.addEventreality(paramEntity, user).intValue() == 1;
+
+			if (StringUtil.isNotEmpty(paramEntity.getImgUrl())) {
+				List<AddEventrealityReqEntity> valuse = new ArrayList<AddEventrealityReqEntity>();
+				String[] imgs = paramEntity.getImgUrl().split(",");
+				AddEventrealityReqEntity temp = null;
+				for (String img : imgs) {
+					temp = new AddEventrealityReqEntity();
+					BeanUtils.copyProperties(paramEntity, temp);
+					temp.setImgUrl(img);
+					valuse.add(temp);
+				}
+				flag = flag && matchProxy.addFile(valuse, user.getUserId()).intValue() > 0;
+			}
+
+			if (flag) {
+				transactionManager.commit(ststus);
 				return successResult("播报成功");
 			} else {
+				transactionManager.rollback(ststus);
 				return errorResult("播报失败");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			transactionManager.rollback(ststus);
 			return errorExceptionResult();
 		}
 	}

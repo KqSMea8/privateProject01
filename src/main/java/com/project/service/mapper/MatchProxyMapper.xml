@@ -263,8 +263,144 @@
 		AND c.status = 1
 	</select>
 	
+	<select id="setParamEntity" resultType="com.project.service.reqentity.match.AddEventrealityReqEntity">
+		SELECT
+			#{paramEntity.type} type,
+			#{paramEntity.content} content,
+			#{paramEntity.imgUrl} imgUrl,
+			x.match_info_id matchInfoId,
+			x.match_schedule_id scheduleId,
+			IF(x.team_info_id1 = 1,x.formation1,x.formation2) formation,
+			y.team_info_id teamInfoId,
+			y.team_name teamInfoName,
+			y.team_member_id teamMemberId,
+			y.name teamMemberName,
+			EXISTS(SELECT * FROM match_schedule_player_situation WHERE x.match_schedule_id = match_schedule_id AND team_member_id = #{paramEntity.replaceTeamMemberId}) isHaveInfo,
+			#{paramEntity.replaceTeamMemberId} replaceTeamMemberId,
+			(SELECT b.name FROM team_member a, user b WHERE a.user_id = b.user_id AND a.team_member_id = #{paramEntity.replaceTeamMemberId}) replaceTeamMemberName
+		FROM
+			match_schedule x,(
+					SELECT
+						b.team_info_id,
+						d.team_name,
+						b.team_member_id,
+						c.name,
+						a.match_schedule_id
+					FROM
+						match_schedule_player_situation a,
+						team_member b,
+						USER c,
+						team_info d
+					WHERE
+						a.team_id = b.team_info_id
+					AND b.team_info_id = d.team_info_id
+					AND a.team_member_id = b.team_member_id
+					AND b.user_id = c.user_id
+					AND a.match_schedule_id = #{paramEntity.scheduleId}
+					AND a.team_member_id = #{paramEntity.teamMemberId}
+				) y
+		WHERE
+			x.match_schedule_id = #{paramEntity.scheduleId}
+		AND x.match_schedule_id = y.match_schedule_id
+	</select>
+	
+	<update id="updatePlayerSituation">
+		UPDATE 
+			match_schedule_player_situation
+		SET 
+			${fieldName} = ${fieldName} + 1
+		WHERE
+			match_info_id = #{paramEntity.matchInfoId}
+		AND match_schedule_id = #{paramEntity.scheduleId}
+		AND team_id = #{paramEntity.teamInfoId}
+		AND team_member_id = #{paramEntity.teamMemberId}
+	</update>
+	
+	<update id="replaceDown">
+		UPDATE 
+			match_schedule_player_situation
+		SET 
+			type = 2,
+			down_time = NOW(),
+			total_second = (IFNULL(total_second,0) + TIMESTAMPDIFF(MINUTE, up_time, NOW()))
+		WHERE
+			match_info_id = #{paramEntity.matchInfoId}
+		AND match_schedule_id = #{paramEntity.scheduleId}
+		AND team_id = #{paramEntity.teamInfoId}
+		AND team_member_id = #{paramEntity.teamMemberId}
+	</update>
+	
+	<update id="replaceDown">
+		UPDATE 
+			match_schedule_player_situation
+		SET 
+			type = 1,
+			up_time = NOW()
+		WHERE
+			match_info_id = #{paramEntity.matchInfoId}
+		AND match_schedule_id = #{paramEntity.scheduleId}
+		AND team_id = #{paramEntity.teamInfoId}
+		AND team_member_id = #{paramEntity.replaceTeamMemberId}
+	</update>
+	
+	<insert id="replaceUpInsert">
+		INSERT INTO match_schedule_player_situation (
+			match_info_id,
+			match_schedule_id,
+			team_id,
+			team_member_id,
+			type,
+			is_first,
+			up_time,
+			formation,
+			user_id
+		)
+		VALUES		
+			(
+				#{paramEntity.matchInfoId},
+				#{paramEntity.scheduleId},
+				#{paramEntity.teamInfoId},
+				#{paramEntity.replaceTeamMemberId},
+				1,
+				0,
+				NOW(),
+				#{paramEntity.formation},
+				#{user.userId}
+			)
+	</insert>
+	
 	<insert id="addEventreality">
-		TODO
+		INSERT INTO match_schedule_stage (
+			match_schedule_id,
+			stage_type,
+			imgs,
+			content,
+			user_id
+		)
+		VALUES
+			(
+				#{paramEntity.scheduleId},
+				#{paramEntity.type},
+				#{paramEntity.imgUrl},
+				#{paramEntity.content},
+				#{user.userId}
+			)
+	</insert>
+	
+	<insert id="addFile">
+		INSERT INTO match_schedule_file (
+			match_info_id,
+			match_schedule_id,
+			team_info_id,
+			team_member_id,
+			file_type,
+			file_path,
+			operator_id
+		)
+		VALUES
+			<foreach collection="list" item="itme" open="(" separator="," close=")">
+				#{itme.matchInfoId},#{itme.scheduleId},#{itme.teamInfoId},#{itme.teamMemberId},2,#{itme.imgUrl},#{userId}
+			</foreach>
 	</insert>
 	
 	<select id="eventRealityList" resultType="java.util.Map">
@@ -508,6 +644,7 @@
 		AND b.team_member_id = e.team_member_id
 		AND e.user_id = c.user_id
 		AND c.user_id = d.user_id
+		AND b.type != 2
 		AND a.match_schedule_id = #{scheduleId}
 	</select>
 	
@@ -540,6 +677,7 @@
 				match_schedule_player_situation
 			WHERE
 				match_schedule_id = a.match_schedule_id
+			AND type != 2
 			<if test="type == 1">
 				AND team_info_id1 = a.team_info_id1
 			</if>
@@ -588,6 +726,7 @@
 			match_schedule_id,
 			team_id,
 			team_member_id,
+			up_time,
 			formation,
 			user_id
 		) SELECT
@@ -595,6 +734,7 @@
 			a.match_schedule_id,
 			b.team_info_id,
 			b.team_member_id,
+			NOW(),
 			#{formation},
 			#{userId}
 		FROM

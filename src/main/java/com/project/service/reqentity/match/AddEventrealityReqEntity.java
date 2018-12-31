@@ -10,11 +10,19 @@ public class AddEventrealityReqEntity extends AbstractParameter {
 
 	private static final long serialVersionUID = -9179454675492903613L;
 
-	@ValidateParam(tip = "赛事ID不得为空")
-	Integer matchInfoId;// 第一层筛选条件
+	Integer matchInfoId;// 需查询
+
+	@ValidateParam(tip = "赛程ID不得为空")
+	Integer scheduleId;
+
+	Integer teamInfoId;// 需查询
+
+	String teamInfoName;// 需查询
 
 	@ValidateParam(tip = "球队球员ID不得为空")
-	Integer teamMemberId;// 第一层筛选条件
+	Integer teamMemberId;
+
+	String teamMemberName;// 需查询
 
 	@ValidateParam(tip = "播报类型不得为空")
 	Integer type;
@@ -25,6 +33,12 @@ public class AddEventrealityReqEntity extends AbstractParameter {
 
 	Integer replaceTeamMemberId;
 
+	String replaceTeamMemberName;// 需查询
+
+	String formation;// 需查询
+
+	Boolean isHaveInfo;// 需查询
+
 	public Integer getMatchInfoId() {
 		return matchInfoId;
 	}
@@ -33,12 +47,44 @@ public class AddEventrealityReqEntity extends AbstractParameter {
 		this.matchInfoId = matchInfoId;
 	}
 
+	public Integer getScheduleId() {
+		return scheduleId;
+	}
+
+	public void setScheduleId(Integer scheduleId) {
+		this.scheduleId = scheduleId;
+	}
+
+	public Integer getTeamInfoId() {
+		return teamInfoId;
+	}
+
+	public void setTeamInfoId(Integer teamInfoId) {
+		this.teamInfoId = teamInfoId;
+	}
+
+	public String getTeamInfoName() {
+		return teamInfoName;
+	}
+
+	public void setTeamInfoName(String teamInfoName) {
+		this.teamInfoName = teamInfoName;
+	}
+
 	public Integer getTeamMemberId() {
 		return teamMemberId;
 	}
 
 	public void setTeamMemberId(Integer teamMemberId) {
 		this.teamMemberId = teamMemberId;
+	}
+
+	public String getTeamMemberName() {
+		return teamMemberName;
+	}
+
+	public void setTeamMemberName(String teamMemberName) {
+		this.teamMemberName = teamMemberName;
 	}
 
 	public Integer getType() {
@@ -72,4 +118,29 @@ public class AddEventrealityReqEntity extends AbstractParameter {
 	public void setReplaceTeamMemberId(Integer replaceTeamMemberId) {
 		this.replaceTeamMemberId = replaceTeamMemberId;
 	}
+
+	public String getReplaceTeamMemberName() {
+		return replaceTeamMemberName;
+	}
+
+	public void setReplaceTeamMemberName(String replaceTeamMemberName) {
+		this.replaceTeamMemberName = replaceTeamMemberName;
+	}
+
+	public String getFormation() {
+		return formation;
+	}
+
+	public void setFormation(String formation) {
+		this.formation = formation;
+	}
+
+	public Boolean getIsHaveInfo() {
+		return isHaveInfo;
+	}
+
+	public void setIsHaveInfo(Boolean isHaveInfo) {
+		this.isHaveInfo = isHaveInfo;
+	}
+
 }
