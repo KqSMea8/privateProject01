@@ -32,7 +32,7 @@ public class CheckTokenAop extends Base {
 	 * @author chentianjin
 	 * @date 2017年5月2日
 	 */
-	@Around("@annotation(com.ruiyun.sell.common.annotation.interfaces.CheckToken)")
+	@Around("@annotation(com.project.common.annotation.interfaces.CheckToken)")
 	public BaseResult around(ProceedingJoinPoint joinPoint) throws Throwable {
 		// 当token为null的时候说明未登录
 		if (checkTokenAopService.getOperatorIdByToken(joinPoint) == null)

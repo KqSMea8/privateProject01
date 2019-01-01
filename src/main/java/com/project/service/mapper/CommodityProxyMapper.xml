@@ -166,7 +166,7 @@
 		AND status = 1
 	</select>
 	
-	<select id="diamondsCommodityList" resultType="java.util.Map">
+	<select id="diamondsCommodityInfo" resultType="java.util.Map">
 		SELECT
 			a.commodity_order_id orderId,
 			a.order_number orderCode,

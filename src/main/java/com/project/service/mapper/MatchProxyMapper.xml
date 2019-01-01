@@ -330,7 +330,7 @@
 		AND team_member_id = #{paramEntity.teamMemberId}
 	</update>
 	
-	<update id="replaceDown">
+	<update id="replaceUpUpdate">
 		UPDATE 
 			match_schedule_player_situation
 		SET 

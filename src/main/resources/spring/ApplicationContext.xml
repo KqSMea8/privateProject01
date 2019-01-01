@@ -74,7 +74,7 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="configLocation" value="classpath:mybatis/mybatis-config.xml"></property>
 		<!-- mapper扫描 -->
-		<property name="mapperLocations" value="classpath*:com/football/**/mapper/**/*Mapper.xml"></property>
+		<property name="mapperLocations" value="classpath*:com/project/**/mapper/**/*Mapper.xml"></property>
 	</bean>
 
 	<bean name="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">

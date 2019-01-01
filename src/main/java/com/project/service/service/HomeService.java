@@ -21,7 +21,7 @@ public class HomeService extends BaseService {
 	public BaseResult home(JSONObject params) {
 		Integer cityId;
 		try {
-			cityId = params.getInt("cityId");
+			cityId = params.optInt("cityId");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorParamsResult();

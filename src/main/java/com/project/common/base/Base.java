@@ -179,12 +179,12 @@ public class Base {
 		return new Gson().fromJson(operatorStr, User.class);
 	}
 
-	public String getSystemParamsByName(String Name) {
+	public String getSystemParamsByName(String name) {
 		File file = new File(ClassPathUtil.getPath() + "resource/system.properties");
 		ProFileReader uploadPropFile;
 		try {
 			uploadPropFile = new ProFileReader(new FileInputStream(file));
-			return uploadPropFile.getParamValue("IS_ENCRYPTION");
+			return uploadPropFile.getParamValue(name);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			return "";

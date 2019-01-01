@@ -109,17 +109,15 @@ public class CommodityService extends BaseService {
 
 	public BaseResult update(User user, JSONObject params) {
 		Integer orderId;
-		Integer status;
 		try {
 			orderId = params.getInt("orderId");
-			status = params.getInt("status");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return errorParamsResult();
 		}
 		try {
 			Map<String, Object> result = new HashMap<String, Object>();
-			if (commodityProxy.update(orderId, status).intValue() == 1) {
+			if (commodityProxy.update(orderId, 3).intValue() == 1) {
 				result.put("orderId", user.getTempId());
 				return successResult("修改成功", result);
 			} else {
